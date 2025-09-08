@@ -10,8 +10,9 @@ int main(int argc, char* argv[])
     bool running = true;
 
     // 創建 Level 對象並加載地圖文件
-    Level level1;
-    if (!level1.loadFromFile("Resources/level1.json")) {
+    Level level;
+    // 將這裡更改為您想要測試的關卡文件
+    if (!level.loadFromFile("Resources/level1.json")) {
         std::cerr << "Failed to load level, exiting." << std::endl;
         system("pause"); // 在退出前暫停，以便看到錯誤訊息
         return -1;
@@ -30,9 +31,9 @@ int main(int argc, char* argv[])
     int planeY = 0;
 
     // --- 2. 設置玩家初始位置 ---
-    const GameObject* objects = level1.getGameObjects();
+    const GameObject* objects = level.getGameObjects();
     bool spawnPointFound = false;
-    for (int i = 0; i < level1.getObjectCount(); ++i) {
+    for (int i = 0; i < level.getObjectCount(); ++i) {
         if (objects[i].type == "hero_respawn") {
             planeX = objects[i].x;
             planeY = objects[i].y;
@@ -50,6 +51,12 @@ int main(int argc, char* argv[])
     GamesEngineeringBase::Timer timer;
     float MOVE_SPEED = 200.0f;
 
+    // --- 新增：縮放控制變量 ---
+    float currentZoom = 0.5f; // 初始縮放為 0.5x
+    level.setZoom(currentZoom);
+    bool plus_pressed = false;  // 用於防止按鍵連發
+    bool minus_pressed = false; // 用於防止按鍵連發
+
     // --- 3. 主遊戲循環 ---
     while (running)
     {
@@ -57,91 +64,114 @@ int main(int argc, char* argv[])
 
         // --- 更新邏輯 ---
         float dt = timer.dt();
+
+        // --- 新增：在 0.5x 和 1.0x 之間切換的縮放邏輯 ---
+        if (canvas.keyPressed(VK_OEM_PLUS) && !plus_pressed) {
+            currentZoom = 1.0f;
+            level.setZoom(currentZoom);
+            plus_pressed = true;
+        }
+        if (!canvas.keyPressed(VK_OEM_PLUS)) {
+            plus_pressed = false;
+        }
+
+        if (canvas.keyPressed(VK_OEM_MINUS) && !minus_pressed) {
+            currentZoom = 0.5f;
+            level.setZoom(currentZoom);
+            minus_pressed = true;
+        }
+        if (!canvas.keyPressed(VK_OEM_MINUS)) {
+            minus_pressed = false;
+        }
+
+        // --- 玩家移動與碰撞邏輯 ---
         int move_amount = static_cast<int>(MOVE_SPEED * dt);
-        if (move_amount < 1) move_amount = 1;
+        if (move_amount < 1 && dt > 0.001) move_amount = 1; // 保证最小移动速度
 
-        // =======================================================================
-        // !! 已重寫的移動與碰撞邏輯 !!
-        // =======================================================================
-
-        // --- 處理水平移動 ---
+        // 水平移動
         int dx = 0;
         if (canvas.keyPressed('A')) { dx -= move_amount; }
         if (canvas.keyPressed('D')) { dx += move_amount; }
-
         if (dx != 0) {
             int nextX = planeX + dx;
-            // 根據移動方向，檢查包圍盒的左側或右側邊緣
-            int collisionTileX = (dx > 0) ? (nextX + playerImage.width) / 32 : nextX / 32;
+            int collisionTileX = (dx > 0) ? (nextX + playerImage.width - 1) / 32 : nextX / 32;
             int topTileY = planeY / 32;
             int bottomTileY = (planeY + playerImage.height - 1) / 32;
-
-            // 只要移動路徑上的任何一個圖塊是障礙物，就不移動
             bool collision = false;
             for (int ty = topTileY; ty <= bottomTileY; ++ty) {
-                if (level1.isObstacleAt(collisionTileX, ty)) {
+                if (level.isObstacleAt(collisionTileX, ty)) {
                     collision = true;
                     break;
                 }
             }
-            if (!collision) {
-                planeX = nextX;
-            }
+            if (!collision) { planeX = nextX; }
         }
 
-        // --- 處理垂直移動 ---
+        // 垂直移動
         int dy = 0;
         if (canvas.keyPressed('W')) { dy -= move_amount; }
         if (canvas.keyPressed('S')) { dy += move_amount; }
-
         if (dy != 0) {
             int nextY = planeY + dy;
-            // 根據移動方向，檢查包圍盒的頂部或底部邊緣
-            int collisionTileY = (dy > 0) ? (nextY + playerImage.height) / 32 : nextY / 32;
+            int collisionTileY = (dy > 0) ? (nextY + playerImage.height - 1) / 32 : nextY / 32;
             int leftTileX = planeX / 32;
             int rightTileX = (planeX + playerImage.width - 1) / 32;
-
             bool collision = false;
             for (int tx = leftTileX; tx <= rightTileX; ++tx) {
-                if (level1.isObstacleAt(tx, collisionTileY)) {
+                if (level.isObstacleAt(tx, collisionTileY)) {
                     collision = true;
                     break;
                 }
             }
-            if (!collision) {
-                planeY = nextY;
-            }
+            if (!collision) { planeY = nextY; }
         }
 
-        // --- 攝像機控制 ---
-        int cameraTargetX = planeX + (playerImage.width / 2) - (canvas.getWidth() / 2);
-        int cameraTargetY = planeY + (playerImage.height / 2) - (canvas.getHeight() / 2);
+        // --- 攝像機控制 (已更新以適應縮放) ---
+        int viewWidthInWorld = static_cast<int>(canvas.getWidth() / currentZoom);
+        int viewHeightInWorld = static_cast<int>(canvas.getHeight() / currentZoom);
 
-        int worldWidthPixels = level1.getWidth() * 32;
-        int worldHeightPixels = level1.getHeight() * 32;
+        int cameraTargetX = planeX + (playerImage.width / 2) - (viewWidthInWorld / 2);
+        int cameraTargetY = planeY + (playerImage.height / 2) - (viewHeightInWorld / 2);
+
+        int worldWidthPixels = level.getWidth() * 32;
+        int worldHeightPixels = level.getHeight() * 32;
         if (cameraTargetX < 0) cameraTargetX = 0;
         if (cameraTargetY < 0) cameraTargetY = 0;
-        if (cameraTargetX > worldWidthPixels - canvas.getWidth()) cameraTargetX = worldWidthPixels - canvas.getWidth();
-        if (cameraTargetY > worldHeightPixels - canvas.getHeight()) cameraTargetY = worldHeightPixels - canvas.getHeight();
+        if (cameraTargetX > worldWidthPixels - viewWidthInWorld) cameraTargetX = worldWidthPixels - viewWidthInWorld;
+        if (cameraTargetY > worldHeightPixels - viewHeightInWorld) cameraTargetY = worldHeightPixels - viewHeightInWorld;
 
-        level1.setCameraPosition(cameraTargetX, cameraTargetY);
+        level.setCameraPosition(cameraTargetX, cameraTargetY);
 
 
         // --- 渲染邏輯 ---
         canvas.clear();
 
-        level1.render(canvas);
+        level.render(canvas);
 
-        int playerScreenX = planeX - cameraTargetX;
-        int playerScreenY = planeY - cameraTargetY;
+        // --- 最终修正版：渲染玩家 (使用逆向映射) ---
+        // 1. 计算玩家在屏幕上的显示区域
+        int player_screen_x_start = static_cast<int>(round((planeX - cameraTargetX) * currentZoom));
+        int player_screen_y_start = static_cast<int>(round((planeY - cameraTargetY) * currentZoom));
+        int player_screen_x_end = static_cast<int>(round((planeX + playerImage.width - cameraTargetX) * currentZoom));
+        int player_screen_y_end = static_cast<int>(round((planeY + playerImage.height - cameraTargetY) * currentZoom));
 
-        for (unsigned int i = 0; i < playerImage.height; i++) {
-            for (unsigned int n = 0; n < playerImage.width; n++) {
-                int targetX = playerScreenX + n;
-                int targetY = playerScreenY + i;
-                if (targetX >= 0 && targetX < canvas.getWidth() && targetY >= 0 && targetY < canvas.getHeight()) {
-                    if (playerImage.alphaAt(n, i) > 200) {
-                        canvas.draw(targetX, targetY, playerImage.at(n, i));
+        // 2. 遍历这个屏幕区域的每一个像素
+        for (int screen_y = player_screen_y_start; screen_y < player_screen_y_end; ++screen_y) {
+            for (int screen_x = player_screen_x_start; screen_x < player_screen_x_end; ++screen_x) {
+
+                // 视锥裁剪
+                if (screen_x >= 0 && screen_x < (int)canvas.getWidth() && screen_y >= 0 && screen_y < (int)canvas.getHeight()) {
+
+                    // 3. 反向精确计算该屏幕像素对应源图片(A.png)的哪个像素
+                    unsigned int src_pixel_x = static_cast<unsigned int>((float)(screen_x - player_screen_x_start) / (player_screen_x_end - player_screen_x_start) * playerImage.width);
+                    unsigned int src_pixel_y = static_cast<unsigned int>((float)(screen_y - player_screen_y_start) / (player_screen_y_end - player_screen_y_start) * playerImage.height);
+
+                    // 边界保护
+                    if (src_pixel_x >= playerImage.width) src_pixel_x = playerImage.width - 1;
+                    if (src_pixel_y >= playerImage.height) src_pixel_y = playerImage.height - 1;
+
+                    if (playerImage.alphaAt(src_pixel_x, src_pixel_y) > 200) {
+                        canvas.draw(screen_x, screen_y, playerImage.at(src_pixel_x, src_pixel_y));
                     }
                 }
             }

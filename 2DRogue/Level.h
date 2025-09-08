@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
-#include "GamesEngineeringBase.h" // 包含框架頭文件
+#include "GamesEngineeringBase.h"
 
-// 用於儲存從 Tiled 加載的遊戲對象（如生成點）的數據結構
+// GameObject 结构体，用于存储 Tiled 中的对象信息
 struct GameObject {
     std::string type;
     int x;
@@ -11,52 +11,58 @@ struct GameObject {
 
 class Level {
 public:
-    // 構造函數與析構函數
     Level();
     ~Level();
 
-    // 從 Tiled 導出的 .json 文件加載關卡數據
+    // 从 Tiled 导出的 .json 文件加载关卡数据
     bool loadFromFile(const std::string& filename);
-
-    // 根據攝像機位置渲染關卡
+    // 渲染关卡
     void render(GamesEngineeringBase::Window& canvas);
 
-    // --- 數據查詢 (Getters) ---
+    // 获取地图宽度（单位：图块）
     int getWidth() const;
+    // 获取地图高度（单位：图块）
     int getHeight() const;
+    // 获取游戏对象数量
     int getObjectCount() const;
+    // 获取游戏对象数组的指针
     const GameObject* getGameObjects() const;
-    bool isObstacleAt(int tx, int ty) const; // 檢查指定圖塊座標是否是障礙物
+    // 检查指定坐标的图块是否为障碍物
+    bool isObstacleAt(int tx, int ty) const;
 
-    // --- 攝像機控制 ---
+    // 获取当前的缩放级别
+    float getZoom() const;
+
+    // 设置摄像机的世界坐标
     void setCameraPosition(int x, int y);
+    // 设置渲染的缩放级别
+    void setZoom(float zoomLevel);
 
 private:
-    // 地圖尺寸（以圖塊為單位）
     int mapWidth;
     int mapHeight;
-
-    // 攝像機位置（以像素為單位）
     int cameraX;
     int cameraY;
+    float zoom; // 缩放比例
 
-    // 用於儲存圖塊數據的動態陣列
+    // 各图层的图块数据
     int* backgroundData;
     int* roadData;
     int* obstaclesData;
     int* debrisData;
 
-    // 用於儲存遊戲對象的動態陣列
+    // 游戏对象数据
     GameObject* gameObjects;
     int objectCount;
 
-    // 用於儲存圖塊集圖片
+    // 图块集图像
     GamesEngineeringBase::Image tilesetImage;
 
-    // 私有輔助函數
+    // 释放内存的辅助函数
     void cleanup();
-    bool findIntValue(const std::string& content, const std::string& key, int& outValue, size_t& searchPos);
-    bool findFloatValue(const std::string& content, const std::string& key, float& outValue, size_t& searchPos);
-    bool findStringValue(const std::string& content, const std::string& key, std::string& outValue, size_t& searchPos);
+
+    // 解析JSON的辅助函数
+    bool findIntValueInSubstring(const std::string& content, const std::string& key, int& outValue);
+    bool findStringValueInSubstring(const std::string& content, const std::string& key, std::string& outValue);
 };
 

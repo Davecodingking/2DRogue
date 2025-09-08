@@ -16,8 +16,16 @@
             "scale": 0.33,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 1377.2727272727273,
-                "y": 1513.6363636363635
+                "x": 1381.8181818181818,
+                "y": 733.3333333333333
+            }
+        },
+        "2DRogue/Resources/level2.json": {
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 5128,
+                "y": 1721.333333333333
             }
         },
         "2dpixx_-_free_2d_topdown_shooter_pack/level1 - 副本.tmx": {
@@ -36,18 +44,18 @@
                 4
             ],
             "scale": 0.33,
-            "selectedLayer": 2,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 1377.2727272727273,
-                "y": 922.7272727272727
+                "x": 875.7575757575756,
+                "y": 645.4545454545455
             }
         },
         "2dpixx_-_free_2d_topdown_shooter_pack/level2.tmx": {
             "scale": 0.125,
-            "selectedLayer": 1,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 2548,
-                "y": 3780
+                "x": 3116,
+                "y": 3748
             }
         },
         "2dpixx_-_free_2d_topdown_shooter_pack/main_tileset.tsx": {
@@ -68,8 +76,10 @@
     ],
     "project": "未命名.tiled-project",
     "recentFiles": [
-        "2dpixx_-_free_2d_topdown_shooter_pack/level2.tmx",
+        "2DRogue/Resources/level2.json",
         "2dpixx_-_free_2d_topdown_shooter_pack/main_tileset.tsx",
+        "2DRogue/Resources/level1.json",
+        "2dpixx_-_free_2d_topdown_shooter_pack/level2.tmx",
         "2dpixx_-_free_2d_topdown_shooter_pack/level1.tmx",
         "2dpixx_-_free_2d_topdown_shooter_pack/level1 - 副本.tmx"
     ],

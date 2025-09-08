@@ -2,9 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <stdexcept> // 用於 std::stoi/stof 的異常捕獲
+#include <stdexcept> 
 
-// --- 構造函數、析構函數、Getters 等保持不變 ---
 Level::Level() {
     mapWidth = 0;
     mapHeight = 0;
@@ -16,6 +15,7 @@ Level::Level() {
     objectCount = 0;
     cameraX = 0;
     cameraY = 0;
+    zoom = 1.0f;
 }
 
 Level::~Level() {
@@ -40,6 +40,7 @@ int Level::getWidth() const { return mapWidth; }
 int Level::getHeight() const { return mapHeight; }
 int Level::getObjectCount() const { return objectCount; }
 const GameObject* Level::getGameObjects() const { return gameObjects; }
+float Level::getZoom() const { return zoom; }
 
 bool Level::isObstacleAt(int tx, int ty) const {
     if (tx < 0 || tx >= mapWidth || ty < 0 || ty >= mapHeight) {
@@ -48,7 +49,7 @@ bool Level::isObstacleAt(int tx, int ty) const {
     if (obstaclesData) {
         return obstaclesData[ty * mapWidth + tx] != 0;
     }
-    return true;
+    return true; // Default to obstacle if data is missing
 }
 
 void Level::setCameraPosition(int x, int y) {
@@ -56,7 +57,12 @@ void Level::setCameraPosition(int x, int y) {
     cameraY = y;
 }
 
-// --- 核心加載函數 ---
+void Level::setZoom(float zoomLevel) {
+    if (zoomLevel > 0.0f) {
+        zoom = zoomLevel;
+    }
+}
+
 bool Level::loadFromFile(const std::string& filename) {
     cleanup();
     std::ifstream file(filename);
@@ -67,9 +73,9 @@ bool Level::loadFromFile(const std::string& filename) {
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     file.close();
 
-    size_t tempSearchPos = 0;
-    if (!findIntValue(content, "\"width\":", this->mapWidth, tempSearchPos) ||
-        !findIntValue(content, "\"height\":", this->mapHeight, tempSearchPos)) {
+    // --- 1. 解析地图的宽度和高度 ---
+    if (!findIntValueInSubstring(content, "\"width\":", this->mapWidth) ||
+        !findIntValueInSubstring(content, "\"height\":", this->mapHeight)) {
         std::cerr << "Error: Failed to parse map dimensions from " << filename << std::endl;
         return false;
     }
@@ -79,49 +85,49 @@ bool Level::loadFromFile(const std::string& filename) {
         return false;
     }
 
+    // --- 2. 为图层数据分配内存 ---
     int totalTiles = this->mapWidth * this->mapHeight;
     this->backgroundData = new int[totalTiles];
     this->roadData = new int[totalTiles];
     this->obstaclesData = new int[totalTiles];
     this->debrisData = new int[totalTiles];
 
-    size_t layersStartPos = content.find("\"layers\":[");
-    if (layersStartPos == std::string::npos) {
-        std::cerr << "Error: Could not find 'layers' array in JSON." << std::endl;
-        cleanup();
-        return false;
-    }
-
+    // --- 3. 解析每一个图块图层 (background, obstacles, etc.) ---
     auto parseTileLayer = [&](const std::string& name, int* dataArray) {
         std::string nameKey = "\"name\":\"" + name + "\"";
-        size_t namePos = content.find(nameKey, layersStartPos);
-
+        size_t namePos = content.find(nameKey);
         if (namePos == std::string::npos) {
             std::cout << "Info: '" << name << "' layer not found. Treating as empty." << std::endl;
             for (int i = 0; i < totalTiles; ++i) dataArray[i] = 0;
             return true;
         }
-
         size_t layerStart = content.rfind('{', namePos);
-        if (layerStart == std::string::npos) {
-            std::cerr << "Error: Malformed JSON, could not find start of '" << name << "' layer object." << std::endl;
-            return false;
-        }
+        size_t dataArrayStart = content.find("\"data\":[", layerStart);
+        if (dataArrayStart == std::string::npos) return true;
 
-        size_t dataPos = content.find("\"data\":[", layerStart);
-        size_t layerEnd = content.find('}', namePos);
-        if (dataPos == std::string::npos || dataPos > layerEnd) {
-            std::cerr << "Error: '" << name << "' data array not found." << std::endl; return false;
-        }
-
-        size_t searchPos = dataPos + 7;
+        size_t searchPos = dataArrayStart + 7;
         for (int i = 0; i < totalTiles; ++i) {
-            while (searchPos < content.length() && (content[searchPos] < '0' || content[searchPos] > '9') && content[searchPos] != '-') { searchPos++; }
-            if (searchPos >= content.length()) { std::cerr << "Error: " << name << " tile data is incomplete." << std::endl; return false; }
+            while (searchPos < content.length() && !isdigit(content[searchPos]) && content[searchPos] != '-') searchPos++;
+            if (searchPos >= content.length() || content[searchPos] == ']') {
+                std::cerr << "Error: Tile data for layer '" << name << "' is incomplete." << std::endl; return false;
+            }
             size_t valueStart = searchPos;
-            while (searchPos < content.length() && ((content[searchPos] >= '0' && content[searchPos] <= '9') || content[searchPos] == '-')) { searchPos++; }
-            try { dataArray[i] = std::stoi(content.substr(valueStart, searchPos - valueStart)); }
-            catch (...) { std::cerr << "Error: Invalid number in " << name << " data near tile index " << i << std::endl; return false; }
+            while (searchPos < content.length() && (isdigit(content[searchPos]) || content[searchPos] == '-')) searchPos++;
+            std::string numStr = content.substr(valueStart, searchPos - valueStart);
+
+            // --- 这是关键的修复 ---
+            try {
+                // 使用 stoull 读取无符号长整型，避免溢出
+                unsigned long long raw_gid = std::stoull(numStr);
+                // Tiled 使用最高的3位作为翻转标志，我们需要把它们去掉
+                const unsigned int ALL_FLIP_FLAGS = 0xE0000000;
+                dataArray[i] = static_cast<int>(raw_gid & ~ALL_FLIP_FLAGS);
+            }
+            catch (const std::exception& e) {
+                // 如果转换失败，打印错误并返回
+                std::cerr << "Error parsing GID for tile " << i << " in layer '" << name << "'. Value: '" << numStr << "'. Error: " << e.what() << std::endl;
+                return false;
+            }
         }
         return true;
         };
@@ -131,180 +137,179 @@ bool Level::loadFromFile(const std::string& filename) {
     if (!parseTileLayer("obstacles", this->obstaclesData)) { cleanup(); return false; }
     if (!parseTileLayer("debris", this->debrisData)) { cleanup(); return false; }
 
-    size_t objectLayerPos = content.find("\"name\":\"GameObjects\"", layersStartPos);
+    // --- 4. 加载贴图文件 ---
+    if (!tilesetImage.load("Resources/city_tileset.png")) {
+        std::cerr << "Error: Could not load tileset image!" << std::endl;
+        cleanup();
+        return false;
+    }
+
+    // --- 5. 精确解析 GameObjects 图层 (这部分逻辑已经是正确的) ---
+    size_t objectLayerPos = content.find("\"name\":\"GameObjects\"");
     if (objectLayerPos != std::string::npos) {
         size_t objectsArrayStart = content.find("\"objects\":[", objectLayerPos);
         if (objectsArrayStart != std::string::npos) {
             objectsArrayStart += 10;
+
             size_t objectsArrayEnd = objectsArrayStart;
             int bracketCount = 1;
-            while (objectsArrayEnd < content.length() - 1 && bracketCount > 0) {
-                objectsArrayEnd++;
+            while (bracketCount > 0 && ++objectsArrayEnd < content.length()) {
                 if (content[objectsArrayEnd] == '[') bracketCount++;
-                else if (content[objectsArrayEnd] == ']') bracketCount--;
+                if (content[objectsArrayEnd] == ']') bracketCount--;
             }
-            if (bracketCount != 0) { std::cerr << "Error: Malformed JSON, unbalanced brackets in objects array." << std::endl; cleanup(); return false; }
 
-            size_t countPos = objectsArrayStart;
-            while (countPos < objectsArrayEnd) {
-                size_t nextObjectStart = content.find('{', countPos);
-                if (nextObjectStart != std::string::npos && nextObjectStart < objectsArrayEnd) {
-                    this->objectCount++;
-                    size_t nextObjectEnd = nextObjectStart + 1;
-                    int braceCount = 1;
-                    while (nextObjectEnd < objectsArrayEnd && braceCount > 0) {
-                        if (content[nextObjectEnd] == '{') braceCount++;
-                        else if (content[nextObjectEnd] == '}') braceCount--;
-                        nextObjectEnd++;
-                    }
-                    countPos = nextObjectEnd;
-                }
-                else { break; }
+            this->objectCount = 0;
+            size_t searchPos = objectsArrayStart;
+            while (searchPos < objectsArrayEnd) {
+                if (content[searchPos] == '{') this->objectCount++;
+                searchPos++;
             }
 
             if (this->objectCount > 0) {
                 this->gameObjects = new GameObject[this->objectCount];
-                size_t currentObjectStart = objectsArrayStart;
+                searchPos = objectsArrayStart;
                 for (int i = 0; i < this->objectCount; ++i) {
-                    currentObjectStart = content.find('{', currentObjectStart);
+                    size_t objectStart = content.find('{', searchPos);
+                    if (objectStart == std::string::npos || objectStart >= objectsArrayEnd) break;
 
-                    size_t currentObjectEnd = currentObjectStart + 1;
+                    size_t objectEnd = objectStart;
                     int braceCount = 1;
-                    while (currentObjectEnd < objectsArrayEnd && braceCount > 0) {
-                        if (content[currentObjectEnd] == '{') braceCount++;
-                        else if (content[currentObjectEnd] == '}') braceCount--;
-                        currentObjectEnd++;
+                    while (braceCount > 0 && ++objectEnd < objectsArrayEnd) {
+                        if (content[objectEnd] == '{') braceCount++;
+                        if (content[objectEnd] == '}') braceCount--;
                     }
-                    currentObjectEnd--;
 
-                    std::string objectString = content.substr(currentObjectStart, currentObjectEnd - currentObjectStart + 1);
+                    std::string objectString = content.substr(objectStart, objectEnd - objectStart + 1);
 
-                    // **最終修復**: 正確解析嵌套的 "type" 屬性
-                    size_t typePos = objectString.find("\"name\":\"type\"");
-                    if (typePos != std::string::npos) {
-                        size_t valuePos = objectString.find("\"value\":\"", typePos);
-                        if (valuePos != std::string::npos) {
-                            size_t valueStart = valuePos + 9; // length of "\"value\":\""
-                            size_t valueEnd = objectString.find('"', valueStart);
-                            if (valueEnd != std::string::npos) {
-                                gameObjects[i].type = objectString.substr(valueStart, valueEnd - valueStart);
+                    size_t typePropertyPos = objectString.find("\"name\":\"type\"");
+                    if (typePropertyPos != std::string::npos) {
+                        std::string valueKey = "\"value\":\"";
+                        size_t valueStartPos = objectString.find(valueKey, typePropertyPos);
+                        if (valueStartPos != std::string::npos) {
+                            valueStartPos += valueKey.length();
+                            size_t valueEndPos = objectString.find('"', valueStartPos);
+                            if (valueEndPos != std::string::npos) {
+                                gameObjects[i].type = objectString.substr(valueStartPos, valueEndPos - valueStartPos);
                             }
                         }
                     }
-                    if (gameObjects[i].type.empty()) { std::cerr << "Error: Could not parse 'type' for object " << i << std::endl; cleanup(); return false; }
 
-                    size_t xPos = objectString.find("\"x\":");
-                    if (xPos == std::string::npos) { std::cerr << "Error: Could not find 'x' for object " << i << std::endl; cleanup(); return false; }
-                    size_t xValueStart = xPos + 4;
-                    size_t xValueEnd = objectString.find_first_of(",}", xValueStart);
-                    try { gameObjects[i].x = static_cast<int>(std::stof(objectString.substr(xValueStart, xValueEnd - xValueStart))); }
-                    catch (...) { std::cerr << "Error: Could not parse 'x' value for object " << i << std::endl; cleanup(); return false; }
+                    findIntValueInSubstring(objectString, "\"x\":", gameObjects[i].x);
+                    findIntValueInSubstring(objectString, "\"y\":", gameObjects[i].y);
 
-                    size_t yPos = objectString.find("\"y\":");
-                    if (yPos == std::string::npos) { std::cerr << "Error: Could not find 'y' for object " << i << std::endl; cleanup(); return false; }
-                    size_t yValueStart = yPos + 4;
-                    size_t yValueEnd = objectString.find_first_of(",}", yValueStart);
-                    try { gameObjects[i].y = static_cast<int>(std::stof(objectString.substr(yValueStart, yValueEnd - yValueStart))); }
-                    catch (...) { std::cerr << "Error: Could not parse 'y' value for object " << i << std::endl; cleanup(); return false; }
-
-                    currentObjectStart = currentObjectEnd + 1;
+                    searchPos = objectEnd + 1;
                 }
             }
         }
     }
 
-    if (!tilesetImage.load("Resources/city_tileset.png")) {
-        std::cerr << "Error: Could not load tileset image 'Resources/city_tileset.png'!" << std::endl;
-        cleanup();
+    std::cout << "Level '" << filename << "' loaded successfully. Dimensions: " << mapWidth << "x" << mapHeight << ". Objects found: " << objectCount << std::endl;
+    return true;
+}
+void Level::render(GamesEngineeringBase::Window& canvas) {
+    if (tilesetImage.width == 0 || !backgroundData) return;
+
+    const float tile_size = 32.0f;
+    int tileset_width_in_tiles = tilesetImage.width / 32;
+
+    // 预先计算出逆向缩放因子，避免在循环中做除法
+    float inverse_zoom = 1.0f / zoom;
+
+    // 遍历屏幕上的每一个像素
+    for (int screen_y = 0; screen_y < (int)canvas.getHeight(); ++screen_y) {
+        for (int screen_x = 0; screen_x < (int)canvas.getWidth(); ++screen_x) {
+
+            // 1. 将屏幕坐标反向映射到世界坐标
+            float world_x = (float)screen_x * inverse_zoom + cameraX;
+            float world_y = (float)screen_y * inverse_zoom + cameraY;
+
+            // 2. 计算出对应的图块坐标
+            int tile_x = static_cast<int>(floor(world_x / tile_size));
+            int tile_y = static_cast<int>(floor(world_y / tile_size));
+
+            // 3. 边界检查，超出地图范围的像素直接跳过
+            if (tile_x < 0 || tile_x >= mapWidth || tile_y < 0 || tile_y >= mapHeight) {
+                continue;
+            }
+
+            // 4. 计算出在源图块中的具体像素坐标 (0-31)
+            int src_pixel_x = static_cast<int>(world_x) % 32;
+            int src_pixel_y = static_cast<int>(world_y) % 32;
+
+            // --- 5. 按顺序从各图层取色并绘制 ---
+
+            // 首先绘制背景层 (没有透明)
+            int bg_tile_id = backgroundData[tile_y * mapWidth + tile_x];
+            if (bg_tile_id > 0) {
+                int bg_source_x = ((bg_tile_id - 1) % tileset_width_in_tiles) * 32;
+                int bg_source_y = ((bg_tile_id - 1) / tileset_width_in_tiles) * 32;
+                canvas.draw(screen_x, screen_y, tilesetImage.at(bg_source_x + src_pixel_x, bg_source_y + src_pixel_y));
+            }
+
+            // 然后叠加绘制道路层 (没有透明)
+            if (roadData) {
+                int road_tile_id = roadData[tile_y * mapWidth + tile_x];
+                if (road_tile_id > 0) {
+                    int road_source_x = ((road_tile_id - 1) % tileset_width_in_tiles) * 32;
+                    int road_source_y = ((road_tile_id - 1) / tileset_width_in_tiles) * 32;
+                    if (tilesetImage.alphaAt(road_source_x + src_pixel_x, road_source_y + src_pixel_y) > 200)
+                    {
+                        canvas.draw(screen_x, screen_y, tilesetImage.at(road_source_x + src_pixel_x, road_source_y + src_pixel_y));
+                    }
+                }
+            }
+
+            // 叠加绘制障碍物层 (检查透明度)
+            if (obstaclesData) {
+                int obs_tile_id = obstaclesData[tile_y * mapWidth + tile_x];
+                if (obs_tile_id > 0) {
+                    int obs_source_x = ((obs_tile_id - 1) % tileset_width_in_tiles) * 32;
+                    int obs_source_y = ((obs_tile_id - 1) / tileset_width_in_tiles) * 32;
+                    if (tilesetImage.alphaAt(obs_source_x + src_pixel_x, obs_source_y + src_pixel_y) > 200) {
+                        canvas.draw(screen_x, screen_y, tilesetImage.at(obs_source_x + src_pixel_x, obs_source_y + src_pixel_y));
+                    }
+                }
+            }
+
+            // 叠加绘制杂物层 (检查透明度)
+            if (debrisData) {
+                int deb_tile_id = debrisData[tile_y * mapWidth + tile_x];
+                if (deb_tile_id > 0) {
+                    int deb_source_x = ((deb_tile_id - 1) % tileset_width_in_tiles) * 32;
+                    int deb_source_y = ((deb_tile_id - 1) / tileset_width_in_tiles) * 32;
+                    if (tilesetImage.alphaAt(deb_source_x + src_pixel_x, deb_source_y + src_pixel_y) > 200) {
+                        canvas.draw(screen_x, screen_y, tilesetImage.at(deb_source_x + src_pixel_x, deb_source_y + src_pixel_y));
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool Level::findIntValueInSubstring(const std::string& content, const std::string& key, int& outValue) {
+    size_t pos = content.find(key);
+    if (pos == std::string::npos) return false;
+
+    size_t valueStart = pos + key.length();
+    while (valueStart < content.length() && (content[valueStart] < '0' || content[valueStart] > '9') && content[valueStart] != '-') {
+        valueStart++;
+    }
+
+    size_t valueEnd = valueStart;
+    if (valueEnd < content.length() && content[valueEnd] == '-') valueEnd++;
+    while (valueEnd < content.length() && (content[valueEnd] >= '0' && content[valueEnd] <= '9')) {
+        valueEnd++;
+    }
+
+    if (valueStart >= valueEnd) return false;
+
+    try {
+        outValue = std::stoi(content.substr(valueStart, valueEnd - valueStart));
+    }
+    catch (const std::exception&) {
         return false;
     }
-    std::cout << "Level '" << filename << "' loaded successfully. Dimensions: " << mapWidth << "x" << mapHeight << ". Objects: " << objectCount << std::endl;
     return true;
 }
 
-// --- 渲染函數 ---
-void Level::render(GamesEngineeringBase::Window& canvas) {
-    if (tilesetImage.width == 0) return;
-
-    int tilesetWidthInTiles = tilesetImage.width / 32;
-    int startTileX = cameraX / 32;
-    int startTileY = cameraY / 32;
-    int endTileX = (cameraX + canvas.getWidth()) / 32 + 2;
-    int endTileY = (cameraY + canvas.getHeight()) / 32 + 2;
-    if (startTileX < 0) startTileX = 0;
-    if (startTileY < 0) startTileY = 0;
-    if (endTileX > mapWidth) endTileX = mapWidth;
-    if (endTileY > mapHeight) endTileY = mapHeight;
-
-    auto drawLayer = [&](int* dataArray, bool checkAlpha) {
-        if (!dataArray) return;
-        for (int ty = startTileY; ty < endTileY; ++ty) {
-            for (int tx = startTileX; tx < endTileX; ++tx) {
-                int tile_id = dataArray[ty * mapWidth + tx];
-                if (tile_id > 0) {
-                    int screenX = tx * 32 - cameraX;
-                    int screenY = ty * 32 - cameraY;
-                    int sourceX = ((tile_id - 1) % tilesetWidthInTiles) * 32;
-                    int sourceY = ((tile_id - 1) / tilesetWidthInTiles) * 32;
-
-                    for (int pixelY = 0; pixelY < 32; ++pixelY) {
-                        for (int pixelX = 0; pixelX < 32; ++pixelX) {
-                            if (checkAlpha && tilesetImage.alphaAt(sourceX + pixelX, sourceY + pixelY) < 255) {
-                                continue;
-                            }
-                            int targetX = screenX + pixelX;
-                            int targetY = screenY + pixelY;
-                            if (targetX >= 0 && targetX < canvas.getWidth() && targetY >= 0 && targetY < canvas.getHeight()) {
-                                unsigned char* pixelColor = tilesetImage.at(sourceX + pixelX, sourceY + pixelY);
-                                canvas.draw(targetX, targetY, pixelColor);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        };
-
-    drawLayer(backgroundData, false);
-    drawLayer(roadData, true);
-    drawLayer(obstaclesData, true);
-    drawLayer(debrisData, true);
-}
-
-
-// --- 私有輔助函數的實現 ---
-bool Level::findIntValue(const std::string& content, const std::string& key, int& outValue, size_t& searchPos) {
-    size_t pos = content.find(key, searchPos);
-    if (pos == std::string::npos) return false;
-    size_t valueStart = pos + key.length();
-    size_t valueEnd = content.find_first_of(",}", valueStart);
-    if (valueEnd == std::string::npos) return false;
-    try { outValue = std::stoi(content.substr(valueStart, valueEnd - valueStart)); }
-    catch (const std::exception&) { return false; }
-    searchPos = valueEnd;
-    return true;
-}
-
-bool Level::findFloatValue(const std::string& content, const std::string& key, float& outValue, size_t& searchPos) {
-    size_t pos = content.find(key, searchPos);
-    if (pos == std::string::npos) return false;
-    size_t valueStart = pos + key.length();
-    size_t valueEnd = content.find_first_of(",}", valueStart);
-    if (valueEnd == std::string::npos) return false;
-    try { outValue = std::stof(content.substr(valueStart, valueEnd - valueStart)); }
-    catch (const std::exception& e) { std::cerr << "Error converting string to float for key '" << key << "'. Content: '" << content.substr(valueStart, valueEnd - valueStart) << "'" << std::endl; return false; }
-    searchPos = valueEnd;
-    return true;
-}
-
-bool Level::findStringValue(const std::string& content, const std::string& key, std::string& outValue, size_t& searchPos) {
-    size_t pos = content.find(key, searchPos);
-    if (pos == std::string::npos) return false;
-    size_t valueStart = pos + key.length();
-    size_t valueEnd = content.find('"', valueStart);
-    if (valueEnd == std::string::npos) return false;
-    outValue = content.substr(valueStart, valueEnd - valueStart);
-    searchPos = valueEnd;
-    return true;
-}
 
