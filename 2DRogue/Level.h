@@ -32,33 +32,43 @@ public:
 
     // 获取当前的缩放级别
     float getZoom() const;
+    // 获取是否为无限模式
+    bool isInfiniteMode() const;
 
     // 设置摄像机的世界坐标
     void setCameraPosition(int x, int y);
     // 设置渲染的缩放级别
     void setZoom(float zoomLevel);
+    // 设置是否为无限模式
+    void setInfinite(bool infinite);
+
 
 private:
     int mapWidth;
     int mapHeight;
     int cameraX;
     int cameraY;
-    float zoom; // 缩放比例
+    float zoom;
+    bool isInfinite; // 新增：用于标记是否为无限地图
 
-    // 各图层的图块数据
-    int* backgroundData;
-    int* roadData;
-    int* obstaclesData;
-    int* debrisData;
+    // 修改这部分：使用一个结构体来存储图块的完整信息
+    struct Tile {
+        int id = 0; // 纯净的图块ID
+        bool flip_h = false; // 是否水平翻转
+        bool flip_v = false; // 是否垂直翻转
+        bool flip_d = false; // 是否对角线翻转 (用于旋转)
+    };
 
-    // 游戏对象数据
+    Tile* backgroundData;
+    Tile* roadData;
+    Tile* obstaclesData;
+    Tile* debrisData;
+
     GameObject* gameObjects;
     int objectCount;
 
-    // 图块集图像
     GamesEngineeringBase::Image tilesetImage;
 
-    // 释放内存的辅助函数
     void cleanup();
 
     // 解析JSON的辅助函数
