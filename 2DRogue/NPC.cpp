@@ -3,73 +3,113 @@
 #include <cmath>
 #include <iostream>
 
-NPC::NPC() {
-    m_currentState = State::WALKING;
-    m_renderScale = 0.25f; // NPC的整体缩放比例
-
-    m_currentFrame = 0.0f;
-    m_animationSpeed = 15.0f;
-    m_explodeAnimationSpeed = 10.0f; // 设置一个较慢的爆炸速度
-    m_walkFrames = 12;
-    m_explodeFrames = 7;
-
+NPC::NPC(NPCType type)
+    : m_currentState(WALKING), m_type(type),
+    m_frameCountWalk(12), m_frameCountExplode(7),
+    m_currentFrame(0.0f), m_animationSpeed(10.0f),
+    m_explodeAnimationSpeed(10.0f), m_renderScale(0.3f),
+    m_preferredDistance(300.0f), m_fireCooldown(0.0f), m_fireRate(2.0f) // Shoots every 2 seconds
+{
     movementSpeed = 100.0f;
-    maxHealth = 100;
-    currentHealth = 100;
+    currentHealth = 50;
+    maxHealth = 50;
 }
 
 NPC::~NPC() {}
 
 bool NPC::Load() {
     if (!m_walkAnimationSheet.load("Resources/npc_walk.png")) {
-        std::cerr << "加载NPC行走图片失败: Resources/npc_walk.png" << std::endl;
+        std::cerr << "Failed to load npc_walk.png" << std::endl;
         return false;
     }
     if (!m_explodeAnimationSheet.load("Resources/npc_explode.png")) {
-        std::cerr << "加载NPC爆炸图片失败: Resources/npc_explode.png" << std::endl;
+        std::cerr << "Failed to load npc_explode.png" << std::endl;
         return false;
     }
-
-    // 使用行走图的第一帧尺寸来确定碰撞大小
-    if (m_walkAnimationSheet.width > 0 && m_walkFrames > 0) {
-        this->width = static_cast<int>((m_walkAnimationSheet.width / m_walkFrames) * m_renderScale);
-        this->height = static_cast<int>(m_walkAnimationSheet.height * m_renderScale);
-    }
+    this->width = (m_walkAnimationSheet.width / m_frameCountWalk) * m_renderScale;
+    this->height = m_walkAnimationSheet.height * m_renderScale;
     return true;
 }
 
-void NPC::InitializeStats(int health, float speed) {
-    this->maxHealth = health;
+void NPC::InitializeStats(int health, float speed, float renderScale) {
     this->currentHealth = health;
+    this->maxHealth = health;
     this->movementSpeed = speed;
+    this->m_renderScale = renderScale;
+    this->width = (m_walkAnimationSheet.width / m_frameCountWalk) * m_renderScale;
+    this->height = m_walkAnimationSheet.height * m_renderScale;
 }
 
-void NPC::SetPosition(float newX, float newY) {
-    this->x = newX;
-    this->y = newY;
+void NPC::TakeDamage(int damage) {
+    if (m_currentState == DYING || m_currentState == DEAD) return;
+
+    Character::TakeDamage(damage);
+
+    if (!isAlive) {
+        m_currentState = DYING;
+        m_currentFrame = 0.0f;
+    }
 }
 
 void NPC::Update(Level& level, float deltaTime) {
-    if (m_currentState == State::WALKING) {
-        m_currentFrame += m_animationSpeed * deltaTime;
-        if (m_currentFrame >= m_walkFrames) {
-            m_currentFrame -= m_walkFrames;
+    if (m_currentState == DEAD) return;
+
+    UpdateEffects(deltaTime);
+
+    if (m_currentState == DYING) {
+        m_currentFrame += m_explodeAnimationSpeed * deltaTime;
+        if (m_currentFrame >= m_frameCountExplode) {
+            m_currentState = DEAD;
         }
+        return;
     }
-    else if (m_currentState == State::DYING) {
-        m_currentFrame += m_animationSpeed * deltaTime;
-        if (m_currentFrame >= m_explodeFrames) {
-            m_currentState = State::DEAD;
+
+    m_currentFrame += m_animationSpeed * deltaTime;
+    if (m_currentFrame >= m_frameCountWalk) {
+        m_currentFrame = 0.0f;
+    }
+
+    if (m_fireCooldown > 0) {
+        m_fireCooldown -= deltaTime;
+    }
+}
+
+void NPC::UpdateAI(float targetX, float targetY, float deltaTime) {
+    if (m_currentState == DYING || m_currentState == DEAD) return;
+    if (m_stunTimer > 0) return;
+
+    if (m_type == MELEE) {
+        m_currentState = WALKING;
+        MoveTowards(targetX, targetY, deltaTime);
+    }
+    else if (m_type == SHOOTER) {
+        float dirX = targetX - x;
+        float dirY = targetY - y;
+        float distance = sqrt(dirX * dirX + dirY * dirY);
+
+        if (distance > m_preferredDistance + 50) {
+            m_currentState = WALKING;
+            MoveTowards(targetX, targetY, deltaTime);
+        }
+        else if (distance < m_preferredDistance - 50) {
+            m_currentState = WALKING;
+            MoveTowards(x - dirX, y - dirY, deltaTime);
+        }
+        else {
+            m_currentState = SHOOTING; // In range, stop and prepare to shoot
         }
     }
 }
 
 void NPC::MoveTowards(float targetX, float targetY, float deltaTime) {
-    if (m_currentState != State::WALKING) return;
+    if (m_currentState != WALKING) return;
+    if (m_stunTimer > 0) return;
 
-    float dirX = targetX - (this->x + this->width / 2.0f);
-    float dirY = targetY - (this->y + this->height / 2.0f);
+    float currentSpeed = movementSpeed;
+    if (m_slowTimer > 0) currentSpeed /= 2.0f;
 
+    float dirX = targetX - x;
+    float dirY = targetY - y;
     float length = sqrt(dirX * dirX + dirY * dirY);
 
     if (length < 1.0f) return;
@@ -77,70 +117,59 @@ void NPC::MoveTowards(float targetX, float targetY, float deltaTime) {
     dirX /= length;
     dirY /= length;
 
-    this->x += dirX * movementSpeed * deltaTime;
-    this->y += dirY * movementSpeed * deltaTime;
+    x += dirX * currentSpeed * deltaTime;
+    y += dirY * currentSpeed * deltaTime;
 }
 
-void NPC::TakeDamage(int damage) {
-    if (m_currentState != State::WALKING) return;
-
-    currentHealth -= damage;
-    if (currentHealth <= 0) {
-        currentHealth = 0;
-        m_currentState = State::DYING;
-        m_currentFrame = 0; // 重置动画帧以便从头播放
-        m_animationSpeed = m_explodeAnimationSpeed; // --- 关键修正：切换到爆炸动画速度 ---
-    }
+bool NPC::canFire() {
+    return m_currentState == SHOOTING && m_fireCooldown <= 0;
 }
 
-bool NPC::getIsAlive() const {
-    return m_currentState != State::DEAD;
-}
-
-NPC::State NPC::getCurrentState() const {
-    return m_currentState;
+void NPC::resetFireCooldown() {
+    m_fireCooldown = m_fireRate;
 }
 
 void NPC::Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) {
-    if (m_currentState == State::DEAD) return;
+    if (m_currentState == DEAD) return;
 
-    GamesEngineeringBase::Image* currentSheet = nullptr;
-    int totalFrames = 0;
-
-    if (m_currentState == State::WALKING) {
-        currentSheet = &m_walkAnimationSheet;
-        totalFrames = m_walkFrames;
+    GamesEngineeringBase::Image* sheet;
+    int frameCount;
+    if (m_currentState == DYING) {
+        sheet = &m_explodeAnimationSheet;
+        frameCount = m_frameCountExplode;
     }
-    else { // DYING
-        currentSheet = &m_explodeAnimationSheet;
-        totalFrames = m_explodeFrames;
+    else {
+        sheet = &m_walkAnimationSheet;
+        frameCount = m_frameCountWalk;
     }
 
-    if (!currentSheet || currentSheet->width == 0) return;
+    int frameWidth = sheet->width / frameCount;
+    int frameHeight = sheet->height;
+    int frameIndex = static_cast<int>(m_currentFrame) % frameCount;
 
-    int frameWidth = currentSheet->width / totalFrames;
-    int frameHeight = currentSheet->height;
-    int frameIndex = static_cast<int>(m_currentFrame);
-    if (frameIndex >= totalFrames) frameIndex = totalFrames - 1;
+    int screenX = static_cast<int>((x - cameraX) * zoom);
+    int screenY = static_cast<int>((y - cameraY) * zoom);
+    int renderWidth = static_cast<int>(frameWidth * m_renderScale * zoom);
+    int renderHeight = static_cast<int>(frameHeight * m_renderScale * zoom);
 
-    int sourceX = frameIndex * frameWidth;
-    int sourceY = 0;
+    if (screenX + renderWidth < 0 || screenX >(int)canvas.getWidth() ||
+        screenY + renderHeight < 0 || screenY >(int)canvas.getHeight()) {
+        return;
+    }
 
-    int screenX_start = static_cast<int>(round((x - cameraX) * zoom));
-    int screenY_start = static_cast<int>(round((y - cameraY) * zoom));
-    int screenX_end = static_cast<int>(round((x + width - cameraX) * zoom));
-    int screenY_end = static_cast<int>(round((y + height - cameraY) * zoom));
+    for (int sy = 0; sy < renderHeight; ++sy) {
+        for (int sx = 0; sx < renderWidth; ++sx) {
+            int canvasX = screenX + sx;
+            int canvasY = screenY + sy;
 
-    if (screenX_start == screenX_end || screenY_start == screenY_end) return;
+            if (canvasX >= 0 && canvasX < (int)canvas.getWidth() && canvasY >= 0 && canvasY < (int)canvas.getHeight()) {
+                unsigned int srcX = frameIndex * frameWidth + static_cast<unsigned int>(sx / (m_renderScale * zoom));
+                unsigned int srcY = static_cast<unsigned int>(sy / (m_renderScale * zoom));
 
-    for (int screenY = screenY_start; screenY < screenY_end; ++screenY) {
-        for (int screenX = screenX_start; screenX < screenX_end; ++screenX) {
-            if (screenX >= 0 && screenX < (int)canvas.getWidth() && screenY >= 0 && screenY < (int)canvas.getHeight()) {
-                unsigned int src_pixel_x = sourceX + static_cast<unsigned int>((double)(screenX - screenX_start) / (double)(screenX_end - screenX_start) * frameWidth);
-                unsigned int src_pixel_y = sourceY + static_cast<unsigned int>((double)(screenY - screenY_start) / (double)(screenY_end - screenY_start) * frameHeight);
-
-                if (currentSheet->alphaAt(src_pixel_x, src_pixel_y) > 200) {
-                    canvas.draw(screenX, screenY, currentSheet->at(src_pixel_x, src_pixel_y));
+                if (srcX < sheet->width && srcY < sheet->height) {
+                    if (sheet->alphaAt(srcX, srcY) > 200) {
+                        canvas.draw(canvasX, canvasY, sheet->at(srcX, srcY));
+                    }
                 }
             }
         }

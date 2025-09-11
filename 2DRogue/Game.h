@@ -3,6 +3,7 @@
 #include "Hero.h"
 #include "Level.h"
 #include "NPC.h"
+#include "Projectile.h"
 #include "GamesEngineeringBase.h"
 #include <string>
 
@@ -18,21 +19,30 @@ private:
     void ProcessInput();
     void Update(float deltaTime);
     void Render();
+
     void UpdateNPCs(float deltaTime);
+    void UpdateProjectiles(float deltaTime);
     void UpdateSpawning(float deltaTime);
-    void SpawnNPC(int x, int y, int health, float speed);
     void CheckCollisions();
+
+    // Spawning methods
+    void SpawnNPC(int x, int y, NPC::NPCType type, int health, float speed, float renderScale);
+    void SpawnProjectile(float startX, float startY, float dirX, float dirY, Projectile::Type type, Projectile::Owner owner);
 
     GamesEngineeringBase::Window m_window;
     Level m_level;
     Hero m_player;
 
-    // NPC 池
+    // --- Object Pools (No STL) ---
     static const int MAX_NPCS = 20;
     NPC* m_npcPool[MAX_NPCS];
     int m_activeNpcCount;
 
-    // 刷怪点
+    static const int MAX_PROJECTILES = 100;
+    Projectile m_projectilePool[MAX_PROJECTILES];
+    int m_activeProjectileCount;
+
+    // --- Spawning System ---
     struct SpawnPoint {
         int x;
         int y;
@@ -41,16 +51,14 @@ private:
     SpawnPoint m_npcSpawnPoints[MAX_SPAWN_POINTS];
     int m_spawnPointCount;
 
-    // 刷怪逻辑
-    float m_waveSpawnTimer;
-    static constexpr float WAVE_INTERVAL = 10.0f;
-    int m_npcsToSpawn;
-
-    // 游戏状态和计时器
+    // --- Game State & Timers ---
     float m_gameTimer;
-    float m_playerDamageCooldown; // <-- 关键修正：在这里补上声明
+    float m_waveSpawnTimer;
+    const float WAVE_INTERVAL = 10.0f;
+    int m_npcsToSpawn;
+    float m_playerDamageCooldown;
 
-    // 摄像机
+    // --- Camera & View ---
     int m_cameraX;
     int m_cameraY;
     float m_zoom;

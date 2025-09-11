@@ -1,56 +1,44 @@
 #pragma once
-#include "GamesEngineeringBase.h"
 
-class Level; // 前向声明
+class Level;
+namespace GamesEngineeringBase {
+    class Window;
+}
 
 class Character {
 public:
-    Character() :
-        x(0.0f), y(0.0f),
-        width(0), height(0),
-        movementSpeed(0.0f),
-        currentHealth(100), maxHealth(100),
-        isAlive(true) {
-    }
-
+    Character();
     virtual ~Character() {}
 
-    // 纯虚函数
     virtual void Update(Level& level, float deltaTime) = 0;
     virtual void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) = 0;
 
-    // 通用方法
-    virtual void TakeDamage(int damage) {
-        currentHealth -= damage;
-        if (currentHealth <= 0) {
-            currentHealth = 0;
-            isAlive = false;
-        }
-    }
+    virtual void TakeDamage(int damage);
 
-    // --- 新增: 设置位置的函数 ---
-    virtual void SetPosition(float newX, float newY) {
-        x = newX;
-        y = newY;
-    }
+    // --- State Effects ---
+    void ApplySlow(float duration);
+    void ApplyStun(float duration);
 
-    // Getters
     float getX() const { return x; }
     float getY() const { return y; }
-    int getWidth() const { return width; }
-    int getHeight() const { return height; }
-    int getCurrentHealth() const { return currentHealth; }
-    virtual bool getIsAlive() const { return isAlive; }
+    float getWidth() const { return width; }
+    float getHeight() const { return height; }
+    bool getIsAlive() const { return isAlive; }
+
+    virtual void SetPosition(float startX, float startY);
 
 protected:
-    // --- x 和 y 改为 float ---
+    void UpdateEffects(float deltaTime);
+
     float x, y;
-    int width, height;
+    float width, height;
     float movementSpeed;
     int currentHealth;
     int maxHealth;
     bool isAlive;
 
-    const int TILE_SIZE = 32;
+    // Effect timers
+    float m_slowTimer;
+    float m_stunTimer;
 };
 

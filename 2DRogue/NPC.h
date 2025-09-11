@@ -1,43 +1,51 @@
 #pragma once
 #include "Character.h"
-#include "GamesEngineeringBase.h"
+#include "GamesEngineeringBase.h" // <-- 关键修正
 #include <string>
 
 class NPC : public Character {
 public:
-    enum class State {
-        WALKING,
-        DYING,
-        DEAD
-    };
+    enum State { WALKING, DYING, DEAD, SHOOTING };
+    enum NPCType { MELEE, SHOOTER };
 
-    NPC();
+    NPC(NPCType type = MELEE);
     ~NPC();
 
     bool Load();
-    void InitializeStats(int health, float speed);
 
     void Update(Level& level, float deltaTime) override;
     void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) override;
-    void SetPosition(float x, float y) override;
-
-    void MoveTowards(float targetX, float targetY, float deltaTime);
     void TakeDamage(int damage) override;
-    bool getIsAlive() const override;
-    State getCurrentState() const;
+
+    void InitializeStats(int health, float speed, float renderScale = 1.0f);
+
+    // AI Methods
+    void UpdateAI(float targetX, float targetY, float deltaTime);
+
+
+    State getCurrentState() const { return m_currentState; }
+    NPCType getNPCType() const { return m_type; }
+    bool canFire();
+    void resetFireCooldown();
 
 private:
+    void MoveTowards(float targetX, float targetY, float deltaTime);
+
     GamesEngineeringBase::Image m_walkAnimationSheet;
     GamesEngineeringBase::Image m_explodeAnimationSheet;
 
     State m_currentState;
-    float m_renderScale;
-
-    // 动画控制
+    NPCType m_type;
+    int m_frameCountWalk;
+    int m_frameCountExplode;
     float m_currentFrame;
     float m_animationSpeed;
-    float m_explodeAnimationSpeed; // 新增：爆炸专用动画速度
-    int m_walkFrames;
-    int m_explodeFrames;
+    float m_explodeAnimationSpeed;
+    float m_renderScale;
+
+    // AI variables
+    float m_preferredDistance;
+    float m_fireCooldown;
+    float m_fireRate;
 };
 

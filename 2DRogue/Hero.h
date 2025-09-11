@@ -5,42 +5,59 @@
 
 class Hero : public Character {
 public:
+    enum class WeaponType { MACHINE_GUN, CANNON };
+
     Hero();
     ~Hero();
 
     bool Load();
 
-    // 重写基类的虚函数
+    // --- Overrides from Character base class ---
     void Update(Level& level, float deltaTime) override;
     void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) override;
-    void SetPosition(float x, float y) override;
+    void TakeDamage(int damage) override;
+    void SetPosition(float startX, float startY) override;
 
-    // 公开函数
+
+    // --- Hero specific functions ---
     void UpdateAiming(GamesEngineeringBase::Window& window, int cameraX, int cameraY, float zoom);
-    void SetSlowed(bool isSlowed);
+    void SetSlowed(bool slowed);
+    float getAimAngle() const { return m_aimAngle; }
+
+    // Weapon System
+    bool CanFire();
+    void ResetFireCooldown();
+    void SwitchWeapon();
+    WeaponType GetCurrentWeapon() const { return m_currentWeapon; }
+
+    // 在 Hero.h 里声明统一发射点接口
+    float GetFirePosX() const;
+    float GetFirePosY() const;
 
 private:
-    // 动画资源
-    GamesEngineeringBase::Image m_legsAnimationSheets[8];
-    GamesEngineeringBase::Image m_torsoAnimationSheets[32];
+    void HandleInput(Level& level, float deltaTime);
+    void CheckMapCollision(Level& level, float newX, float newY);
 
-    // 动画控制
-    int m_currentLegsDirection;
+    // --- Animation & Rendering ---
+    GamesEngineeringBase::Image m_legAnimations[8];
+    GamesEngineeringBase::Image m_torsoAnimations[32];
+    int m_legDirection;
+    int m_torsoDirection;
     float m_currentFrame;
     float m_animationSpeed;
-    int m_currentTorsoFrame;
+    float m_aimAngle;
+    float m_renderScale; // <-- **已恢复**
+    float m_torsoOffsetY;
 
-    // 状态
+    // --- State ---
+    const int TILE_SIZE = 32;
     bool m_isMoving;
     bool m_isSlowed;
 
-    // 渲染参数
-    float m_renderScale;
-    float m_torsoOffsetY;
-
-    // 内部辅助函数
-    // --- 关键修正：让HandleInput可以接收Level对象 ---
-    void HandleInput(Level& level, float deltaTime);
-    void CheckMapCollision(Level& level, float newX, float newY);
+    // --- Weapon Variables ---
+    WeaponType m_currentWeapon;
+    float m_fireCooldown;
+    float m_machineGunCooldown;
+    float m_cannonCooldown;
 };
 
