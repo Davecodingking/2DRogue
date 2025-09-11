@@ -4,104 +4,146 @@
 #include <iostream>
 
 NPC::NPC() {
-    // 构造函数中可以设置一些默认值
-    movementSpeed = 2.0f; // NPC 默认速度比玩家慢
-    currentHealth = 50;
-    maxHealth = 50;
+    m_currentState = State::WALKING;
+    m_renderScale = 0.25f; // NPC的整体缩放比例
+
+    m_currentFrame = 0.0f;
+    m_animationSpeed = 15.0f;
+    m_explodeAnimationSpeed = 10.0f; // 设置一个较慢的爆炸速度
+    m_walkFrames = 12;
+    m_explodeFrames = 7;
+
+    movementSpeed = 100.0f;
+    maxHealth = 100;
+    currentHealth = 100;
 }
 
-NPC::~NPC() {
-}
+NPC::~NPC() {}
 
-bool NPC::Load(const std::string& filename) {
-    if (!npcImage.load(filename)) {
-        std::cerr << "加载NPC图片失败: " << filename << std::endl;
+bool NPC::Load() {
+    if (!m_walkAnimationSheet.load("Resources/npc_walk.png")) {
+        std::cerr << "加载NPC行走图片失败: Resources/npc_walk.png" << std::endl;
         return false;
     }
-    // 使用图片尺寸设置NPC的碰撞尺寸
-    this->width = npcImage.width;
-    this->height = npcImage.height;
+    if (!m_explodeAnimationSheet.load("Resources/npc_explode.png")) {
+        std::cerr << "加载NPC爆炸图片失败: Resources/npc_explode.png" << std::endl;
+        return false;
+    }
+
+    // 使用行走图的第一帧尺寸来确定碰撞大小
+    if (m_walkAnimationSheet.width > 0 && m_walkFrames > 0) {
+        this->width = static_cast<int>((m_walkAnimationSheet.width / m_walkFrames) * m_renderScale);
+        this->height = static_cast<int>(m_walkAnimationSheet.height * m_renderScale);
+    }
     return true;
 }
 
-void NPC::SetPosition(int startX, int startY) {
-    this->x = startX;
-    this->y = startY;
-}
-
 void NPC::InitializeStats(int health, float speed) {
-    this->currentHealth = health;
     this->maxHealth = health;
+    this->currentHealth = health;
     this->movementSpeed = speed;
 }
 
-// Update 函数每一帧都会被调用
-void NPC::Update(Level& level, float deltaTime) {
-    // 如果NPC死亡，则不执行任何逻辑
-    if (!isAlive) {
-        return;
-    }
-    // 目前，NPC的自主更新逻辑是空的。
-    // 它的移动将由 Game 类的 AI 逻辑部分调用 MoveTowards() 来驱动。
-    // 未来我们可以在这里添加动画、状态切换等逻辑。
+void NPC::SetPosition(float newX, float newY) {
+    this->x = newX;
+    this->y = newY;
 }
 
-// AI 移动逻辑
-void NPC::MoveTowards(int targetX, int targetY) {
-    if (!isAlive) {
-        return;
+void NPC::Update(Level& level, float deltaTime) {
+    if (m_currentState == State::WALKING) {
+        m_currentFrame += m_animationSpeed * deltaTime;
+        if (m_currentFrame >= m_walkFrames) {
+            m_currentFrame -= m_walkFrames;
+        }
     }
+    else if (m_currentState == State::DYING) {
+        m_currentFrame += m_animationSpeed * deltaTime;
+        if (m_currentFrame >= m_explodeFrames) {
+            m_currentState = State::DEAD;
+        }
+    }
+}
 
-    // 计算从NPC到目标的向量
-    float dirX = (float)targetX - this->x;
-    float dirY = (float)targetY - this->y;
+void NPC::MoveTowards(float targetX, float targetY, float deltaTime) {
+    if (m_currentState != State::WALKING) return;
 
-    // 计算向量的长度（距离）
+    float dirX = targetX - (this->x + this->width / 2.0f);
+    float dirY = targetY - (this->y + this->height / 2.0f);
+
     float length = sqrt(dirX * dirX + dirY * dirY);
 
-    // 如果距离很近，就不用移动了，避免抖动
-    if (length < 1.0f) {
-        return;
-    }
+    if (length < 1.0f) return;
 
-    // 将向量单位化（长度变为1），这样移动速度就不会受距离影响
     dirX /= length;
     dirY /= length;
 
-    // 根据方向和速度，更新NPC的位置
-    // 这里我们暂时不考虑NPC之间的碰撞和与地形的碰撞
-    this->x += dirX * movementSpeed;
-    this->y += dirY * movementSpeed;
+    this->x += dirX * movementSpeed * deltaTime;
+    this->y += dirY * movementSpeed * deltaTime;
+}
+
+void NPC::TakeDamage(int damage) {
+    if (m_currentState != State::WALKING) return;
+
+    currentHealth -= damage;
+    if (currentHealth <= 0) {
+        currentHealth = 0;
+        m_currentState = State::DYING;
+        m_currentFrame = 0; // 重置动画帧以便从头播放
+        m_animationSpeed = m_explodeAnimationSpeed; // --- 关键修正：切换到爆炸动画速度 ---
+    }
+}
+
+bool NPC::getIsAlive() const {
+    return m_currentState != State::DEAD;
+}
+
+NPC::State NPC::getCurrentState() const {
+    return m_currentState;
 }
 
 void NPC::Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) {
-    if (!isAlive) {
-        return;
+    if (m_currentState == State::DEAD) return;
+
+    GamesEngineeringBase::Image* currentSheet = nullptr;
+    int totalFrames = 0;
+
+    if (m_currentState == State::WALKING) {
+        currentSheet = &m_walkAnimationSheet;
+        totalFrames = m_walkFrames;
+    }
+    else { // DYING
+        currentSheet = &m_explodeAnimationSheet;
+        totalFrames = m_explodeFrames;
     }
 
-    // 这段渲染代码和 Hero::Render 中的逻辑完全一样
-    int screen_x_start = static_cast<int>(round((x - cameraX) * zoom));
-    int screen_y_start = static_cast<int>(round((y - cameraY) * zoom));
-    int screen_x_end = static_cast<int>(round((x + width - cameraX) * zoom));
-    int screen_y_end = static_cast<int>(round((y + height - cameraY) * zoom));
+    if (!currentSheet || currentSheet->width == 0) return;
 
-    if (screen_x_start == screen_x_end || screen_y_start == screen_y_end) {
-        return;
-    }
+    int frameWidth = currentSheet->width / totalFrames;
+    int frameHeight = currentSheet->height;
+    int frameIndex = static_cast<int>(m_currentFrame);
+    if (frameIndex >= totalFrames) frameIndex = totalFrames - 1;
 
-    for (int screen_y = screen_y_start; screen_y < screen_y_end; ++screen_y) {
-        for (int screen_x = screen_x_start; screen_x < screen_x_end; ++screen_x) {
-            if (screen_x >= 0 && screen_x < (int)canvas.getWidth() && screen_y >= 0 && screen_y < (int)canvas.getHeight()) {
-                unsigned int src_pixel_x = static_cast<unsigned int>((double)(screen_x - screen_x_start) / (double)(screen_x_end - screen_x_start) * width);
-                unsigned int src_pixel_y = static_cast<unsigned int>((double)(screen_y - screen_y_start) / (double)(screen_y_end - screen_y_start) * height);
+    int sourceX = frameIndex * frameWidth;
+    int sourceY = 0;
 
-                if (src_pixel_x >= npcImage.width) src_pixel_x = npcImage.width - 1;
-                if (src_pixel_y >= npcImage.height) src_pixel_y = npcImage.height - 1;
+    int screenX_start = static_cast<int>(round((x - cameraX) * zoom));
+    int screenY_start = static_cast<int>(round((y - cameraY) * zoom));
+    int screenX_end = static_cast<int>(round((x + width - cameraX) * zoom));
+    int screenY_end = static_cast<int>(round((y + height - cameraY) * zoom));
 
-                if (npcImage.alphaAt(src_pixel_x, src_pixel_y) > 200) {
-                    canvas.draw(screen_x, screen_y, npcImage.at(src_pixel_x, src_pixel_y));
+    if (screenX_start == screenX_end || screenY_start == screenY_end) return;
+
+    for (int screenY = screenY_start; screenY < screenY_end; ++screenY) {
+        for (int screenX = screenX_start; screenX < screenX_end; ++screenX) {
+            if (screenX >= 0 && screenX < (int)canvas.getWidth() && screenY >= 0 && screenY < (int)canvas.getHeight()) {
+                unsigned int src_pixel_x = sourceX + static_cast<unsigned int>((double)(screenX - screenX_start) / (double)(screenX_end - screenX_start) * frameWidth);
+                unsigned int src_pixel_y = sourceY + static_cast<unsigned int>((double)(screenY - screenY_start) / (double)(screenY_end - screenY_start) * frameHeight);
+
+                if (currentSheet->alphaAt(src_pixel_x, src_pixel_y) > 200) {
+                    canvas.draw(screenX, screenY, currentSheet->at(src_pixel_x, src_pixel_y));
                 }
             }
         }
     }
 }
+

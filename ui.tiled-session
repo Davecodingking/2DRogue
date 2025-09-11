@@ -1,0 +1,35 @@
+{
+    "activeFile": "hp_ui.tsx",
+    "expandedProjectPaths": [
+        "2DRogue",
+        "."
+    ],
+    "fileStates": {
+        "hp_ui.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "ui.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "frame.defaultDuration": 80,
+    "last.imagePath": "C:/Users/13670/source/repos/2DRogue/raw/Pixel UI pack 3",
+    "openFiles": [
+        "ui.tsx",
+        "hp_ui.tsx"
+    ],
+    "project": "ui.tiled-project",
+    "recentFiles": [
+        "ui.tsx",
+        "hp_ui.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 64,
+        "width": 64
+    },
+    "tileset.type": 1
+}

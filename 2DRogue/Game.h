@@ -16,26 +16,41 @@ public:
 
 private:
     void ProcessInput();
-    void Update(float deltaTime); // <-- 参数增加 deltaTime
+    void Update(float deltaTime);
     void Render();
-
-    // NPC 管理函数
-    void SpawnNPC(int x, int y, const std::string& spritePath, int health, float speed);
-    void UpdateNPCs(float deltaTime); // <-- 参数增加 deltaTime
+    void UpdateNPCs(float deltaTime);
+    void UpdateSpawning(float deltaTime);
+    void SpawnNPC(int x, int y, int health, float speed);
+    void CheckCollisions();
 
     GamesEngineeringBase::Window m_window;
     Level m_level;
     Hero m_player;
 
     // NPC 池
-    static const int MAX_NPCS = 50;
+    static const int MAX_NPCS = 20;
     NPC* m_npcPool[MAX_NPCS];
     int m_activeNpcCount;
 
-    // 游戏状态和计时器
-    float m_gameTimer;       // 游戏总计时器
-    float m_npcSpawnTimer;   // NPC生成计时器（为未来随机生成做准备）
+    // 刷怪点
+    struct SpawnPoint {
+        int x;
+        int y;
+    };
+    static const int MAX_SPAWN_POINTS = 10;
+    SpawnPoint m_npcSpawnPoints[MAX_SPAWN_POINTS];
+    int m_spawnPointCount;
 
+    // 刷怪逻辑
+    float m_waveSpawnTimer;
+    static constexpr float WAVE_INTERVAL = 10.0f;
+    int m_npcsToSpawn;
+
+    // 游戏状态和计时器
+    float m_gameTimer;
+    float m_playerDamageCooldown; // <-- 关键修正：在这里补上声明
+
+    // 摄像机
     int m_cameraX;
     int m_cameraY;
     float m_zoom;

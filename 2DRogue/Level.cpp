@@ -3,7 +3,7 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
-#include <cmath> // 包含 cmath 用于 floor, ceil, 和 round
+#include <cmath> 
 
 // --- 构造函数与析构函数 ---
 Level::Level() {
@@ -18,7 +18,7 @@ Level::Level() {
     cameraX = 0;
     cameraY = 0;
     zoom = 1.0f;
-    isInfinite = false; // 初始化无限模式为关闭
+    isInfinite = false;
 }
 
 Level::~Level() {
@@ -67,7 +67,6 @@ void Level::setInfinite(bool infinite) {
 bool Level::isObstacleAt(int tx, int ty) const {
     if (isInfinite) {
         if (!obstaclesData || mapWidth <= 0 || mapHeight <= 0) return false;
-        // 使用取模运算将世界图块坐标“包裹”到地图数据坐标
         int dataTx = (tx % mapWidth + mapWidth) % mapWidth;
         int dataTy = (ty % mapHeight + mapHeight) % mapHeight;
 
@@ -77,7 +76,7 @@ bool Level::isObstacleAt(int tx, int ty) const {
     }
     else {
         if (tx < 0 || tx >= mapWidth || ty < 0 || ty >= mapHeight) {
-            return true; // 地图外的区域视为障碍
+            return true;
         }
         if (obstaclesData && obstaclesData[ty * mapWidth + tx].id > 0) {
             return true;
@@ -173,7 +172,7 @@ void Level::render(GamesEngineeringBase::Window& canvas) {
 }
 
 
-// --- 文件解析函数 ---
+// --- 文件解析函数 (已恢复所有调试日志) ---
 bool Level::loadFromFile(const std::string& filename) {
     cleanup();
     std::ifstream file(filename);
@@ -345,4 +344,3 @@ bool Level::findStringValueInSubstring(const std::string& content, const std::st
     outValue = content.substr(valueStart, valueEnd - valueStart);
     return true;
 }
-

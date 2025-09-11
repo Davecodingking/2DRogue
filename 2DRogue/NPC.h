@@ -3,33 +3,41 @@
 #include "GamesEngineeringBase.h"
 #include <string>
 
-// NPC 类，同样继承自 Character
 class NPC : public Character {
 public:
-    // 构造函数
+    enum class State {
+        WALKING,
+        DYING,
+        DEAD
+    };
+
     NPC();
-    // 析构函数
     ~NPC();
 
-    // 加载NPC所需资源（外观图片）
-    bool Load(const std::string& filename);
-
-    // 设置NPC的初始位置
-    void SetPosition(int startX, int startY);
-
-    // 初始化NPC的属性（生命值、速度等）
+    bool Load();
     void InitializeStats(int health, float speed);
 
-    // --- 重写 (Override) 基类的虚函数 ---
     void Update(Level& level, float deltaTime) override;
     void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) override;
+    void SetPosition(float x, float y) override;
 
-    // --- NPC 独有的行为 ---
-    // AI 逻辑：让 NPC 朝着一个目标坐标移动
-    void MoveTowards(int targetX, int targetY);
+    void MoveTowards(float targetX, float targetY, float deltaTime);
+    void TakeDamage(int damage) override;
+    bool getIsAlive() const override;
+    State getCurrentState() const;
 
 private:
-    // NPC的外观图片
-    GamesEngineeringBase::Image npcImage;
-    const int TILE_SIZE = 32;
+    GamesEngineeringBase::Image m_walkAnimationSheet;
+    GamesEngineeringBase::Image m_explodeAnimationSheet;
+
+    State m_currentState;
+    float m_renderScale;
+
+    // 动画控制
+    float m_currentFrame;
+    float m_animationSpeed;
+    float m_explodeAnimationSpeed; // 新增：爆炸专用动画速度
+    int m_walkFrames;
+    int m_explodeFrames;
 };
+

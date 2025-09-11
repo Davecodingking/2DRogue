@@ -1,22 +1,26 @@
 #pragma once
+#include "GamesEngineeringBase.h"
 
-// --- 前向声明 (Forward Declarations) ---
-class Level;
-namespace GamesEngineeringBase {
-    class Window;
-}
+class Level; // 前向声明
 
 class Character {
 public:
-    Character() : x(0), y(0), width(0), height(0), movementSpeed(0.0f), currentHealth(100), maxHealth(100), isAlive(true) {}
+    Character() :
+        x(0.0f), y(0.0f),
+        width(0), height(0),
+        movementSpeed(0.0f),
+        currentHealth(100), maxHealth(100),
+        isAlive(true) {
+    }
+
     virtual ~Character() {}
 
-    // --- 纯虚函数 ---
+    // 纯虚函数
     virtual void Update(Level& level, float deltaTime) = 0;
     virtual void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) = 0;
 
-    // --- 通用方法 ---
-    void TakeDamage(int damage) {
+    // 通用方法
+    virtual void TakeDamage(int damage) {
         currentHealth -= damage;
         if (currentHealth <= 0) {
             currentHealth = 0;
@@ -24,19 +28,29 @@ public:
         }
     }
 
-    // --- Getters (访问器) ---
-    int getX() const { return x; }
-    int getY() const { return y; }
+    // --- 新增: 设置位置的函数 ---
+    virtual void SetPosition(float newX, float newY) {
+        x = newX;
+        y = newY;
+    }
+
+    // Getters
+    float getX() const { return x; }
+    float getY() const { return y; }
     int getWidth() const { return width; }
     int getHeight() const { return height; }
-    bool getIsAlive() const { return isAlive; } // <-- 新增：允许外部检查存活状态
+    int getCurrentHealth() const { return currentHealth; }
+    virtual bool getIsAlive() const { return isAlive; }
 
 protected:
-    // --- 通用属性 ---
-    int x, y;
+    // --- x 和 y 改为 float ---
+    float x, y;
     int width, height;
     float movementSpeed;
     int currentHealth;
     int maxHealth;
     bool isAlive;
+
+    const int TILE_SIZE = 32;
 };
+
