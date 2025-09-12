@@ -7,6 +7,7 @@ class Level;
 
 class Hero : public Character {
 public:
+    // --- 修改: 移除 LASER, 它现在是一个独立的技能 ---
     enum class WeaponType { MACHINE_GUN, CANNON };
 
     Hero();
@@ -29,6 +30,12 @@ public:
     // Get the logical position from where projectiles should be fired
     float GetFirePosX() const;
     float GetFirePosY() const;
+
+    // --- 新增: 激光技能相关函数 ---
+    void AddLaserCharges(int amount);
+    void UseLaserCharge();
+    int GetLaserCharges() const;
+    float m_laserCooldown; // 将激光冷却时间设为公开，方便Game类访问
 
 private:
     void HandleInput(Level& level, float deltaTime);
@@ -57,4 +64,8 @@ private:
     float m_machineGunCooldown;
     float m_cannonCooldown;
     float m_fireCooldown;
+
+    // --- 新增: 激光充能次数 ---
+    int m_laserCharges;
 };
+

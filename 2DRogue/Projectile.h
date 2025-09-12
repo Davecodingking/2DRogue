@@ -6,7 +6,7 @@
 class Projectile {
 public:
     enum Owner { PLAYER, ENEMY };
-    enum Type { MACHINE_GUN, CANNON, ENEMY_BULLET };
+    enum Type { MACHINE_GUN, CANNON, ENEMY_BULLET, ENEMY_SPHERE };
     enum State { INACTIVE, FLYING, EXPLODING };
 
     Projectile();
@@ -34,7 +34,7 @@ private:
     float m_x, m_y;
     float m_velX, m_velY;
     float m_width, m_height;
-    float m_angle; // Rotation angle in radians
+    float m_angle;
     float m_renderScale;
     int m_damage;
     float m_speed;
@@ -45,6 +45,9 @@ private:
 
     float m_animationFrame;
     float m_animationSpeed;
+
+    // --- 新增: 子弹生命周期计时器 ---
+    float m_lifeTimer;
 
     static GamesEngineeringBase::Image s_bulletImage;
     static GamesEngineeringBase::Image s_explodeSheet;

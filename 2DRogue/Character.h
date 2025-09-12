@@ -24,6 +24,7 @@ public:
     float getWidth() const { return width; }
     float getHeight() const { return height; }
     bool getIsAlive() const { return isAlive; }
+    int getHealth() const { return currentHealth; } // 新增：允许子类和外部访问血量
 
     virtual void SetPosition(float startX, float startY);
 
@@ -41,4 +42,3 @@ protected:
     float m_slowTimer;
     float m_stunTimer;
 };
-

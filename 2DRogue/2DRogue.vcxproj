@@ -126,6 +126,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="GamesEngineeringBase.h" />
     <ClInclude Include="Hero.h" />
+    <ClInclude Include="LaserBeam.h" />
     <ClInclude Include="Level.h" />
     <ClInclude Include="NPC.h" />
     <ClInclude Include="Projectile.h" />
@@ -135,6 +136,7 @@
     <ClCompile Include="Character.h" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Hero.cpp" />
+    <ClCompile Include="LaserBeam.cpp" />
     <ClCompile Include="Level.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NPC.cpp" />
