@@ -11,7 +11,7 @@ class Game {
 public:
     Game();
     ~Game();
-    bool Initialize();
+    bool Initialize(const std::string& levelFile);
     void Run();
     void Shutdown();
 
@@ -26,15 +26,16 @@ private:
     void CheckCollisions();
 
     // Spawning methods
-    void SpawnNPC(int x, int y, NPC::NPCType type, int health, float speed, float renderScale);
+    void SpawnNPC(int x, int y, NPC::NPCType type);
     void SpawnProjectile(float startX, float startY, float dirX, float dirY, Projectile::Type type, Projectile::Owner owner);
+
 
     GamesEngineeringBase::Window m_window;
     Level m_level;
     Hero m_player;
 
     // --- Object Pools (No STL) ---
-    static const int MAX_NPCS = 20;
+    static const int MAX_NPCS = 50; // Increased pool size for level 2
     NPC* m_npcPool[MAX_NPCS];
     int m_activeNpcCount;
 
@@ -50,13 +51,24 @@ private:
     static const int MAX_SPAWN_POINTS = 10;
     SpawnPoint m_npcSpawnPoints[MAX_SPAWN_POINTS];
     int m_spawnPointCount;
+    SpawnPoint m_bossSpawnPoints[MAX_SPAWN_POINTS];
+    int m_bossSpawnPointCount;
 
     // --- Game State & Timers ---
     float m_gameTimer;
-    float m_waveSpawnTimer;
-    const float WAVE_INTERVAL = 10.0f;
-    int m_npcsToSpawn;
     float m_playerDamageCooldown;
+
+    // --- Level & Wave Management ---
+    int m_currentLevel;
+    int m_currentWave;
+    bool m_waveInProgress;
+    float m_waveCooldownTimer; // 5-second delay for Level 1
+
+    // Level 2 specific state
+    int m_level2_npcSpawnedCount;
+    float m_level2_spawnTimer;
+    bool m_bossSpawned;
+
 
     // --- Camera & View ---
     int m_cameraX;

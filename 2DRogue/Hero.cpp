@@ -26,7 +26,7 @@ Hero::Hero() {
     m_isSlowed = false;
 
     m_currentWeapon = WeaponType::MACHINE_GUN;
-    m_machineGunCooldown = 0.15f;
+    m_machineGunCooldown = 0.1f;
     m_cannonCooldown = 0.8f;
     m_fireCooldown = 0.0f;
 }
@@ -143,36 +143,39 @@ void Hero::HandleInput(Level& level, float deltaTime) {
 }
 
 void Hero::UpdateAiming(GamesEngineeringBase::Window& window, int cameraX, int cameraY, float zoom) {
-    // 1. 获取角色在屏幕上的中心点坐标
-    float characterCenterX = x + width / 2.0f;
-    float characterCenterY = y + height / 2.0f;
-    float screenX = (characterCenterX - cameraX) * zoom;
-    float screenY = (characterCenterY - cameraY) * zoom;
+    // ** 关键修正: 使用上半身的中心点作为旋转轴心，而不是整个身体的中心 **
+    // 1. 获取上半身在世界坐标中的旋转轴心
+    float pivotX = GetFirePosX();
+    float pivotY = GetFirePosY();
 
-    // 2. 获取鼠标在窗口内的坐标
+    // 2. 将轴心转换到屏幕坐标
+    float screenX = (pivotX - cameraX) * zoom;
+    float screenY = (pivotY - cameraY) * zoom;
+
+    // 3. 获取鼠标在窗口内的坐标
     int mouseX = window.getMouseInWindowX();
     int mouseY = window.getMouseInWindowY();
 
-    // 3. 计算从角色中心到鼠标的向量
+    // 4. 计算从轴心到鼠标的向量
     float deltaX = mouseX - screenX;
     float deltaY = mouseY - screenY;
 
-    // 关键修正: 反转Y轴以匹配屏幕坐标系(Y向下为正)和标准数学坐标系(Y向上为正)
+    // 5. 关键修正: 反转Y轴以匹配屏幕坐标系(Y向下为正)和标准数学坐标系(Y向上为正)
     m_aimAngle = atan2(-deltaY, deltaX);
 
-    // 4. 将标准数学角度(弧度)转换为0-360度的标准角度
+    // 6. 将标准数学角度(弧度)转换为0-360度的标准角度
     float standard_degrees = m_aimAngle * 180.0f / M_PI;
     if (standard_degrees < 0) {
         standard_degrees += 360.0f;
     }
 
-    // 5. 将标准角度转换为美术资源的坐标系角度
+    // 7. 将标准角度转换为美术资源的坐标系角度
     // 标准坐标系: 0度朝右(East), 90度朝上(North), 逆时针增长
     // 美术坐标系: 0度朝下(South), 顺时针增长
     // 正确的转换公式: asset_degrees = (270 - standard_degrees + 360) % 360
     float asset_degrees = fmod(270.0f - standard_degrees + 360.0f, 360.0f);
 
-    // 6. 根据美术坐标系角度，计算出对应的动画帧索引(0-31)
+    // 8. 根据美术坐标系角度，计算出对应的动画帧索引(0-31)
     const float anglePerDirection = 11.25f; // 360 / 32
     m_torsoDirection = static_cast<int>((asset_degrees + (anglePerDirection / 2.0f)) / anglePerDirection) % 32;
 }
@@ -249,23 +252,17 @@ void Hero::SwitchWeapon() {
 }
 
 float Hero::GetFirePosX() const {
+    // X position is the center of the character's bounding box
     return x + width / 2.0f;
 }
 
 float Hero::GetFirePosY() const {
+    // Y position is the center of the TORSO sprite, not the whole character
+    // It's calculated from the character's origin (y), the torso's render offset, and half the torso's logical height.
+    if (m_torsoAnimations[0].height > 0) {
+        // We use the full height of the torso animation sheet for this calculation
+        return y + m_torsoOffsetY + (m_torsoAnimations[0].height / 2.0f * m_renderScale);
+    }
+    // Fallback to character center if torso image isn't loaded yet
     return y + height / 2.0f;
 }
-
-float Hero::GetTorsoFireAngle() const {
-    // 1. 根据上半身动画帧索引，获取其在美术坐标系下的中心角度
-    const float anglePerDirection = 11.25f; // 360 / 32
-    float asset_degrees = m_torsoDirection * anglePerDirection;
-
-    // 2. 将美术坐标系角度，逆向转换回0-360度的标准数学角度
-    // 正确的转换公式: standard_degrees = (270 - asset_degrees + 360) % 360
-    float standard_degrees = fmod(270.0f - asset_degrees + 360.0f, 360.0f);
-
-    // 3. 将标准角度转换为弧度，并取反以匹配Y轴向下的游戏坐标系
-    return -(standard_degrees * M_PI / 180.0f);
-}
-

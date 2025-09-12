@@ -1,10 +1,22 @@
 {
-    "activeFile": "hp_ui.tsx",
+    "activeFile": "2DRogue/Resources/level2.json",
     "expandedProjectPaths": [
-        "2DRogue",
-        "."
+        ".",
+        "2DRogue"
     ],
+    "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
+        "2DRogue/Resources/level2.json": {
+            "scale": 0.037109375,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 2479.157894736842,
+                "y": 3813.0526315789475
+            }
+        },
+        "2dpixx_-_free_2d_topdown_shooter_pack/main_tileset.tsx": {
+            "scaleInDock": 1
+        },
         "hp_ui.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -19,12 +31,14 @@
     "last.imagePath": "C:/Users/13670/source/repos/2DRogue/raw/Pixel UI pack 3",
     "openFiles": [
         "ui.tsx",
-        "hp_ui.tsx"
+        "hp_ui.tsx",
+        "2DRogue/Resources/level2.json"
     ],
     "project": "ui.tiled-project",
     "recentFiles": [
         "ui.tsx",
-        "hp_ui.tsx"
+        "hp_ui.tsx",
+        "2DRogue/Resources/level2.json"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {

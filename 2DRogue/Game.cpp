@@ -9,12 +9,16 @@
 Game::Game()
     : m_cameraX(0), m_cameraY(0), m_zoom(1.5f), m_isRunning(false),
     m_activeNpcCount(0), m_activeProjectileCount(0), m_gameTimer(0.0f),
-    m_spawnPointCount(0), m_waveSpawnTimer(WAVE_INTERVAL),
-    m_npcsToSpawn(2), m_playerDamageCooldown(0.0f)
+    m_spawnPointCount(0), m_bossSpawnPointCount(0), m_playerDamageCooldown(0.0f),
+    m_currentLevel(0), m_currentWave(1), m_waveInProgress(false), m_waveCooldownTimer(0.0f),
+    m_level2_npcSpawnedCount(0), m_level2_spawnTimer(1.0f), m_bossSpawned(false)
 {
     for (int i = 0; i < MAX_NPCS; ++i) m_npcPool[i] = nullptr;
     for (int i = 0; i < MAX_PROJECTILES; ++i) m_projectilePool[i] = Projectile();
-    for (int i = 0; i < MAX_SPAWN_POINTS; ++i) m_npcSpawnPoints[i] = { 0, 0 };
+    for (int i = 0; i < MAX_SPAWN_POINTS; ++i) {
+        m_npcSpawnPoints[i] = { 0, 0 };
+        m_bossSpawnPoints[i] = { 0, 0 };
+    }
     srand(static_cast<unsigned int>(time(0)));
 }
 
@@ -22,23 +26,31 @@ Game::~Game() {
     Shutdown();
 }
 
-bool Game::Initialize() {
+bool Game::Initialize(const std::string& levelFile) {
     m_window.create(1024, 768, "2D Mech Rogue Game");
     std::cout << "Window created successfully." << std::endl;
 
+    if (levelFile.find("level1") != std::string::npos) {
+        m_currentLevel = 1;
+        std::cout << "Loading Level 1..." << std::endl;
+    }
+    else if (levelFile.find("level2") != std::string::npos) {
+        m_currentLevel = 2;
+        std::cout << "Loading Level 2..." << std::endl;
+    }
+    else {
+        m_currentLevel = 0; // Unknown level
+        std::cout << "Loading unknown level..." << std::endl;
+    }
 
-    std::string levelFile = "Resources/level1.json";
+
     if (!m_level.loadFromFile(levelFile)) {
-        // Error message is now inside level loader
-        system("pause");
         return false;
     }
     m_level.setInfinite(false);
     m_level.setZoom(m_zoom);
 
     if (!m_player.Load()) {
-        // Error message is now inside hero loader
-        system("pause");
         return false;
     }
 
@@ -52,7 +64,9 @@ bool Game::Initialize() {
         }
         else if (obj.type == "generic_npc_respawn" && m_spawnPointCount < MAX_SPAWN_POINTS) {
             m_npcSpawnPoints[m_spawnPointCount++] = { obj.x, obj.y };
-            std::cout << "NPC Spawn Point registered at (" << obj.x << ", " << obj.y << ")" << std::endl;
+        }
+        else if (obj.type == "boss_npc_respawn" && m_bossSpawnPointCount < MAX_SPAWN_POINTS) {
+            m_bossSpawnPoints[m_bossSpawnPointCount++] = { obj.x, obj.y };
         }
     }
     if (!playerSpawnPointFound) {
@@ -98,18 +112,20 @@ void Game::ProcessInput() {
     if (wheelDelta != 0) {
         m_zoom += wheelDelta * 0.001f;
         if (m_zoom < 0.5f) m_zoom = 0.5f;
-        if (m_zoom > 1.0f) m_zoom = 1.0f;
+        if (m_zoom > 3.0f) m_zoom = 3.0f;
         m_level.setZoom(m_zoom);
     }
 
     // Player Shooting
     if (m_window.mouseButtonPressed(GamesEngineeringBase::MouseButton::MouseLeft) && m_player.CanFire()) {
         m_player.ResetFireCooldown();
-        // 关键修正: 使用与上半身方向完全一致的量化角度进行射击
-        float angle = m_player.GetTorsoFireAngle();
+        float angle = m_player.getAimAngle();
         Projectile::Type projType = (m_player.GetCurrentWeapon() == Hero::WeaponType::MACHINE_GUN) ? Projectile::MACHINE_GUN : Projectile::CANNON;
 
-        SpawnProjectile(m_player.GetFirePosX(), m_player.GetFirePosY(), cos(angle), sin(angle), projType, Projectile::PLAYER);
+        // ** 关键修正 **
+        // 1. 使用修正后的 GetFirePosX/Y 从上半身发射
+        // 2. 将 sin(angle) 取反 (-sin(angle)) 来校正Y轴，确保射击方向和鼠标一致
+        SpawnProjectile(m_player.GetFirePosX(), m_player.GetFirePosY(), cos(angle), -sin(angle), projType, Projectile::PLAYER);
     }
 
     // Weapon Switch
@@ -157,7 +173,6 @@ void Game::Update(float deltaTime) {
 }
 
 void Game::CheckCollisions() {
-    // Player vs NPC (Pushback and Slow)
     m_player.SetSlowed(false);
     float heroX = m_player.getX(), heroY = m_player.getY();
     float heroW = m_player.getWidth(), heroH = m_player.getHeight();
@@ -174,7 +189,6 @@ void Game::CheckCollisions() {
         }
     }
 
-    // Projectile vs Characters
     for (int i = 0; i < m_activeProjectileCount; i++) {
         Projectile& proj = m_projectilePool[i];
         if (!proj.IsActive()) continue;
@@ -189,7 +203,7 @@ void Game::CheckCollisions() {
                     float npcX = npc->getX(), npcY = npc->getY();
                     float npcW = npc->getWidth(), npcH = npc->getHeight();
                     if (projX < npcX + npcW && projX + projW > npcX && projY < npcY + npcH && projY + projH > npcY) {
-                        npc->TakeDamage(10); // Example damage
+                        npc->TakeDamage(proj.getType() == Projectile::CANNON ? 50 : 10);
                         if (proj.getType() == Projectile::MACHINE_GUN) npc->ApplySlow(1.5f);
                         if (proj.getType() == Projectile::CANNON) npc->ApplyStun(1.0f);
                         proj.Deactivate();
@@ -202,7 +216,7 @@ void Game::CheckCollisions() {
             if (m_playerDamageCooldown <= 0) {
                 if (projX < heroX + heroW && projX + projW > heroX && projY < heroY + heroH && projY + projH > heroY) {
                     m_player.TakeDamage(10);
-                    m_playerDamageCooldown = 0.5f; // 0.5 seconds invulnerability
+                    m_playerDamageCooldown = 0.5f;
                     proj.Deactivate();
                 }
             }
@@ -218,7 +232,7 @@ void Game::UpdateNPCs(float deltaTime) {
             npc->Update(m_level, deltaTime);
             npc->UpdateAI(m_player.getX(), m_player.getY(), deltaTime);
 
-            if (npc->getNPCType() == NPC::SHOOTER && npc->canFire()) {
+            if (npc->canFire()) {
                 npc->resetFireCooldown();
                 float npcX = npc->getX() + npc->getWidth() / 2.0f;
                 float npcY = npc->getY() + npc->getHeight() / 2.0f;
@@ -228,13 +242,13 @@ void Game::UpdateNPCs(float deltaTime) {
             }
         }
     }
-    // Cleanup dead NPCs
     for (int i = m_activeNpcCount - 1; i >= 0; --i) {
         if (m_npcPool[i] && m_npcPool[i]->getCurrentState() == NPC::State::DEAD) {
             delete m_npcPool[i];
             m_npcPool[i] = m_npcPool[m_activeNpcCount - 1];
             m_npcPool[m_activeNpcCount - 1] = nullptr;
             m_activeNpcCount--;
+            m_waveInProgress = m_activeNpcCount > 0;
         }
     }
 }
@@ -257,21 +271,63 @@ void Game::UpdateProjectiles(float deltaTime) {
 void Game::UpdateSpawning(float deltaTime) {
     if (m_spawnPointCount == 0) return;
 
-    m_waveSpawnTimer -= deltaTime;
-    if (m_waveSpawnTimer <= 0) {
-        for (int i = 0; i < m_npcsToSpawn; ++i) {
-            if (m_activeNpcCount >= MAX_NPCS) break;
-            int spawnIndex = rand() % m_spawnPointCount;
-            int spawnX = m_npcSpawnPoints[spawnIndex].x;
-            int spawnY = m_npcSpawnPoints[spawnIndex].y;
+    switch (m_currentLevel) {
+    case 1: {
+        if (m_currentWave > 3) return; // Level 1 finished
 
-            NPC::NPCType type = (rand() % 3 == 0) ? NPC::SHOOTER : NPC::MELEE;
-            SpawnNPC(spawnX, spawnY, type, 100, 80.0f, 0.3f);
+        if (!m_waveInProgress && m_activeNpcCount == 0) {
+            if (m_waveCooldownTimer <= 0) {
+                m_waveCooldownTimer = 5.0f; // Start 5 second countdown
+            }
+            else {
+                m_waveCooldownTimer -= deltaTime;
+                if (m_waveCooldownTimer <= 0) {
+                    int npcsToSpawn = m_currentWave * 2;
+                    std::cout << "Starting Wave " << m_currentWave << " with " << npcsToSpawn << " NPCs." << std::endl;
+                    for (int i = 0; i < npcsToSpawn; ++i) {
+                        if (m_activeNpcCount >= MAX_NPCS) break;
+                        int spawnIndex = rand() % m_spawnPointCount;
+                        NPC::NPCType type = static_cast<NPC::NPCType>(rand() % 3); // Melee, Shooter, Sniper
+                        SpawnNPC(m_npcSpawnPoints[spawnIndex].x, m_npcSpawnPoints[spawnIndex].y, type);
+                    }
+                    m_currentWave++;
+                    m_waveInProgress = true;
+                }
+            }
         }
-        if (m_npcsToSpawn < 8) m_npcsToSpawn++;
-        m_waveSpawnTimer = WAVE_INTERVAL;
+        break;
+    }
+    case 2: {
+        // Phase 1: Spawn 20 minions
+        if (m_level2_npcSpawnedCount < 20) {
+            m_level2_spawnTimer -= deltaTime;
+            if (m_level2_spawnTimer <= 0) {
+                int spawnIndex = rand() % m_spawnPointCount;
+                NPC::NPCType type = static_cast<NPC::NPCType>(rand() % 3); // Melee, Shooter, Sniper
+                SpawnNPC(m_npcSpawnPoints[spawnIndex].x, m_npcSpawnPoints[spawnIndex].y, type);
+                m_level2_npcSpawnedCount++;
+                m_level2_spawnTimer = 1.0f;
+                std::cout << "Spawned minion " << m_level2_npcSpawnedCount << "/20." << std::endl;
+            }
+        }
+        // Phase 2: Spawn Boss
+        else if (!m_bossSpawned) {
+            if (m_bossSpawnPointCount > 0) {
+                int spawnIndex = rand() % m_bossSpawnPointCount;
+                SpawnNPC(m_bossSpawnPoints[spawnIndex].x, m_bossSpawnPoints[spawnIndex].y, NPC::BOSS_AIRCRAFT);
+                m_bossSpawned = true;
+                std::cout << "BOSS HAS SPAWNED!" << std::endl;
+            }
+            else {
+                std::cerr << "Error: Level 2 trying to spawn boss but no boss_npc_respawn point found!" << std::endl;
+                m_bossSpawned = true; // Prevent trying again
+            }
+        }
+        break;
+    }
     }
 }
+
 
 void Game::Render() {
     m_window.clear();
@@ -282,15 +338,14 @@ void Game::Render() {
     m_window.present();
 }
 
-void Game::SpawnNPC(int x, int y, NPC::NPCType type, int health, float speed, float renderScale) {
+void Game::SpawnNPC(int x, int y, NPC::NPCType type) {
     if (m_activeNpcCount >= MAX_NPCS) {
-        std::cout << "NPC池已满，无法生成新的NPC。" << std::endl;
+        std::cout << "NPC pool is full." << std::endl;
         return;
     }
     NPC* newNpc = new NPC(type);
     if (newNpc->Load()) {
         newNpc->SetPosition((float)x, (float)y);
-        newNpc->InitializeStats(health, speed, renderScale);
         m_npcPool[m_activeNpcCount++] = newNpc;
     }
     else {
