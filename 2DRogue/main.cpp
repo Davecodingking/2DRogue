@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 
     // 初始化游戏，如果成功则开始运行
     // 您可以在这里更改加载的关卡文件，例如改为 "Resources/level2.json" 来测试第二关
-    if (game.Initialize("Resources/level1.json")) {
+    if (game.Initialize("Resources/level2.json")) {
         game.Run();
     }
     else {

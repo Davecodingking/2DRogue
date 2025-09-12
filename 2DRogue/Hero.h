@@ -1,7 +1,9 @@
 #pragma once
 #include "Character.h"
 #include "GamesEngineeringBase.h"
-#include <string>
+
+// Forward declaration
+class Level;
 
 class Hero : public Character {
 public:
@@ -11,57 +13,48 @@ public:
     ~Hero();
 
     bool Load();
+    void Update(Level& level, float deltaTime);
+    void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom);
 
-    // --- Overrides from Character base class ---
-    void Update(Level& level, float deltaTime) override;
-    void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) override;
-    void TakeDamage(int damage) override;
-    void SetPosition(float startX, float startY) override;
-
-
-    // --- Hero specific functions ---
     void UpdateAiming(GamesEngineeringBase::Window& window, int cameraX, int cameraY, float zoom);
+    void CheckMapCollision(Level& level, float newX, float newY);
     void SetSlowed(bool slowed);
-    float getAimAngle() const { return m_aimAngle; }
-
-    // Weapon System
-    bool CanFire();
-    void ResetFireCooldown();
     void SwitchWeapon();
+    void ResetFireCooldown();
+
+    bool CanFire();
+    float getAimAngle() const { return m_aimAngle; }
     WeaponType GetCurrentWeapon() const { return m_currentWeapon; }
 
-    // 在 Hero.h 里声明统一发射点接口
+    // Get the logical position from where projectiles should be fired
     float GetFirePosX() const;
     float GetFirePosY() const;
 
-    // 新增: 获取与上半身方向一致的射击角度（弧度）
-    float GetTorsoFireAngle() const;
-
 private:
     void HandleInput(Level& level, float deltaTime);
-    void CheckMapCollision(Level& level, float newX, float newY);
 
-    // --- Animation & Rendering ---
+    // Animations
     GamesEngineeringBase::Image m_legAnimations[8];
     GamesEngineeringBase::Image m_torsoAnimations[32];
+
     int m_legDirection;
     int m_torsoDirection;
     float m_currentFrame;
     float m_animationSpeed;
+
+    // Aiming & Positioning
     float m_aimAngle;
     float m_renderScale;
     float m_torsoOffsetX;
     float m_torsoOffsetY;
 
-    // --- State ---
-    const int TILE_SIZE = 32;
+    // State
     bool m_isMoving;
     bool m_isSlowed;
 
-    // --- Weapon Variables ---
+    // Weapon
     WeaponType m_currentWeapon;
-    float m_fireCooldown;
     float m_machineGunCooldown;
     float m_cannonCooldown;
+    float m_fireCooldown;
 };
-
