@@ -34,6 +34,9 @@ public:
     float GetFirePosX() const;
     float GetFirePosY() const;
 
+    // 新增: 获取与上半身方向一致的射击角度（弧度）
+    float GetTorsoFireAngle() const;
+
 private:
     void HandleInput(Level& level, float deltaTime);
     void CheckMapCollision(Level& level, float newX, float newY);
@@ -46,7 +49,8 @@ private:
     float m_currentFrame;
     float m_animationSpeed;
     float m_aimAngle;
-    float m_renderScale; // <-- **已恢复**
+    float m_renderScale;
+    float m_torsoOffsetX;
     float m_torsoOffsetY;
 
     // --- State ---

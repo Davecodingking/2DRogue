@@ -98,16 +98,18 @@ void Game::ProcessInput() {
     if (wheelDelta != 0) {
         m_zoom += wheelDelta * 0.001f;
         if (m_zoom < 0.5f) m_zoom = 0.5f;
-        if (m_zoom > 3.0f) m_zoom = 3.0f;
+        if (m_zoom > 1.0f) m_zoom = 1.0f;
         m_level.setZoom(m_zoom);
     }
 
     // Player Shooting
     if (m_window.mouseButtonPressed(GamesEngineeringBase::MouseButton::MouseLeft) && m_player.CanFire()) {
         m_player.ResetFireCooldown();
-        float angle = m_player.getAimAngle();
+        // 关键修正: 使用与上半身方向完全一致的量化角度进行射击
+        float angle = m_player.GetTorsoFireAngle();
         Projectile::Type projType = (m_player.GetCurrentWeapon() == Hero::WeaponType::MACHINE_GUN) ? Projectile::MACHINE_GUN : Projectile::CANNON;
-        SpawnProjectile(m_player.getX() + m_player.getWidth() / 2.0f, m_player.getY() + m_player.getHeight() / 2.0f, cos(angle), sin(angle), projType, Projectile::PLAYER);
+
+        SpawnProjectile(m_player.GetFirePosX(), m_player.GetFirePosY(), cos(angle), sin(angle), projType, Projectile::PLAYER);
     }
 
     // Weapon Switch
