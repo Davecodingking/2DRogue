@@ -60,7 +60,7 @@ bool LaserBeam::Update(float deltaTime) {
             float dx = m_targetX - m_actualStartX;
             float dy = m_targetY - m_actualStartY;
             m_angle = atan2(dy, dx);
-            m_length = sqrt(dx * dx + dy * dy) + 1500;
+            m_length = sqrt(dx * dx + dy * dy) + 2500;
 
             m_isInitialized = true; // 标记为已初始化
         }

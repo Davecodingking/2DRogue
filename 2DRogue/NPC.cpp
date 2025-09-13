@@ -51,20 +51,20 @@ NPC::NPC(NPCType type)
     // Set stats based on type
     switch (m_type) {
     case MELEE:
-		InitializeStats(50, 200.0f, 0.15f);//health 50, speed 200 render scale 0.15
+		InitializeStats(50, 230.0f, 0.15f);//health 50, speed 200 render scale 0.15
         break;
     case SHOOTER:
-        InitializeStats(80, 80.0f, 0.3f);
-        m_preferredDistance = 500.0f;
+        InitializeStats(100, 180.0f, 0.3f);
+        m_preferredDistance = 700.0f;
         m_fireRate = 1.0f;
         break;
     case SNIPER:
-        InitializeStats(100, 60.0f, 4.0f);
-        m_preferredDistance = 800.0f;
-        m_fireRate = 1.5f;
+        InitializeStats(200, 120.0f, 4.0f);
+        m_preferredDistance = 900.0f;
+        m_fireRate = 1.0f;
         break;
     case BOSS_AIRCRAFT:
-        InitializeStats(2000, 250.0f, 6.0f);
+        InitializeStats(2000, 300.0f, 6.0f);
         m_preferredDistance = 500.0f;
         m_fireRate = 0.3f;
         break;
@@ -185,8 +185,8 @@ void NPC::UpdateAI(float targetX, float targetY, float deltaTime) {
         if (distance > m_preferredDistance + 50) {
             m_currentState = WALKING;
         }
-        else if (distance < m_preferredDistance - 50) {
-            m_currentState = WALKING;
+        else if (distance < m_preferredDistance) {
+            m_currentState = SHOOTING;
         }
         else {
             m_currentState = SHOOTING;

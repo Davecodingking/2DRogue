@@ -8,16 +8,16 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// Define TILE_SIZE if it's not defined elsewhere, assuming 32
 #ifndef TILE_SIZE
 #define TILE_SIZE 32
 #endif
+
+// ... Hero构造函数, Load, Update等函数保持不变 ...
 
 Hero::Hero() {
     movementSpeed = 250.0f;
     maxHealth = 200;
     currentHealth = maxHealth;
-
     m_legDirection = 0;
     m_torsoDirection = 0;
     m_currentFrame = 0.0f;
@@ -26,19 +26,15 @@ Hero::Hero() {
     m_renderScale = 2.0f;
     m_torsoOffsetX = 0.0f;
     m_torsoOffsetY = -64.0f;
-
     m_isMoving = false;
     m_isSlowed = false;
-
     m_currentWeapon = WeaponType::MACHINE_GUN;
-    m_machineGunCooldown = 0.08f;
-    m_cannonCooldown = 2.5f;
-
-    m_laserMaxCooldown = 10.0f;
-    m_laserCooldown = 0.0f; // 初始狀態為可用
-
-    m_fireCooldown = 0.0f;
-    m_fireMaxCooldown = m_machineGunCooldown; // --- 新增: 默認為機槍的CD ---
+    m_machineGunCooldown = 0.1f;
+    m_cannonCooldown = 3.0f;
+    m_laserMaxCooldown = 12.0f;
+    m_laserCooldown = 0.0f;
+    m_machineGunTimer = 0.0f;
+    m_cannonTimer = 0.0f;
     m_laserCharges = 0;
 }
 
@@ -69,7 +65,8 @@ bool Hero::Load() {
 void Hero::Update(Level& level, float deltaTime) {
     if (!isAlive) return;
     UpdateEffects(deltaTime);
-    if (m_fireCooldown > 0) m_fireCooldown -= deltaTime;
+    if (m_machineGunTimer > 0) m_machineGunTimer -= deltaTime;
+    if (m_cannonTimer > 0) m_cannonTimer -= deltaTime;
     if (m_laserCooldown > 0) m_laserCooldown -= deltaTime;
     HandleInput(level, deltaTime);
     if (m_isMoving) {
@@ -119,8 +116,8 @@ void Hero::UpdateAiming(GamesEngineeringBase::Window& window, int cameraX, int c
     float deltaX = mouseX - screenX;
     float deltaY = mouseY - screenY;
     m_aimAngle = atan2(-deltaY, deltaX);
-    float standard_degrees = m_aimAngle * 180.0f / M_PI;
-    if (standard_degrees < 0) standard_degrees += 360.0f;
+    float standard_degrees = m_aimAngle * 180.00f / M_PI;
+    if (standard_degrees < 0) standard_degrees += 360.00f;
     float asset_degrees = fmod(270.0f - standard_degrees + 360.0f, 360.0f);
     const float anglePerDirection = 11.25f;
     m_torsoDirection = static_cast<int>((asset_degrees + (anglePerDirection / 2.0f)) / anglePerDirection) % 32;
@@ -155,54 +152,69 @@ void Hero::CheckMapCollision(Level& level, float newX, float newY) {
     }
 }
 
+// ★★★ 错误修复: 添加缺失函数的具体实现 ★★★
+void Hero::SetPosition(float newX, float newY) {
+    x = newX;
+    y = newY;
+}
+
+void Hero::TakeDamage(int damage) {
+    currentHealth -= damage;
+    if (currentHealth <= 0) {
+        currentHealth = 0;
+        isAlive = false;
+        // 这里可以添加死亡逻辑, 例如播放死亡动画
+    }
+}
+// ★★★ 修复结束 ★★★
+
 void Hero::SetSlowed(bool slowed) { m_isSlowed = slowed; }
 
 bool Hero::CanFire() {
-    return m_fireCooldown <= 0;
+    if (m_currentWeapon == WeaponType::MACHINE_GUN) {
+        return m_machineGunTimer <= 0;
+    }
+    else {
+        return m_cannonTimer <= 0;
+    }
 }
 
 void Hero::ResetFireCooldown() {
-    m_fireCooldown = m_fireMaxCooldown;
+    if (m_currentWeapon == WeaponType::MACHINE_GUN) {
+        m_machineGunTimer = m_machineGunCooldown;
+    }
+    else {
+        m_cannonTimer = m_cannonCooldown;
+    }
 }
 
 void Hero::SwitchWeapon() {
     if (m_currentWeapon == WeaponType::MACHINE_GUN) {
         m_currentWeapon = WeaponType::CANNON;
-        m_fireMaxCooldown = m_cannonCooldown;
     }
     else {
         m_currentWeapon = WeaponType::MACHINE_GUN;
-        m_fireMaxCooldown = m_machineGunCooldown;
     }
 }
 
-void Hero::AddLaserCharges(int amount) {
-    m_laserCharges += amount;
-}
-
-void Hero::UseLaserCharge() {
-    if (m_laserCharges > 0) {
-        m_laserCharges--;
-    }
-}
-
-int Hero::GetLaserCharges() const {
-    return m_laserCharges;
-}
-
-float Hero::GetFirePosX() const {
-    return x + width / 2.0f;
-}
-
+void Hero::AddLaserCharges(int amount) { m_laserCharges += amount; }
+void Hero::UseLaserCharge() { if (m_laserCharges > 0) m_laserCharges--; }
+int Hero::GetLaserCharges() const { return m_laserCharges; }
+float Hero::GetFirePosX() const { return x + width / 2.0f; }
 float Hero::GetFirePosY() const {
     if (m_torsoAnimations[0].height > 0) {
         return y + m_torsoOffsetY + (m_torsoAnimations[0].height * m_renderScale) / 2.0f;
     }
     return y + height / 2.0f;
 }
-
-// --- 新增: 恢复生命值的实现 ---
-void Hero::RestoreFullHealth() {
-    currentHealth = maxHealth;
-    isAlive = true;
+void Hero::RestoreFullHealth() { currentHealth = maxHealth; isAlive = true; }
+Hero::WeaponType Hero::GetCurrentWeapon() const { return m_currentWeapon; }
+float Hero::GetCurrentCooldownTimer() const {
+    if (m_currentWeapon == WeaponType::MACHINE_GUN) return m_machineGunTimer;
+    else return m_cannonTimer;
 }
+float Hero::GetCurrentMaxCooldown() const {
+    if (m_currentWeapon == WeaponType::MACHINE_GUN) return m_machineGunCooldown;
+    else return m_cannonCooldown;
+}
+
