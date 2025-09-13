@@ -85,5 +85,12 @@ private:
     int m_cameraY;
     float m_zoom;
     bool m_isRunning;
+
+    // --- 新增: UI相關成員變量 ---
+    GamesEngineeringBase::Image m_healthSheet;
+    int m_playerScore;
+    int m_fps;
+    int m_frameCount;
+    float m_fpsTimer;
 };
 

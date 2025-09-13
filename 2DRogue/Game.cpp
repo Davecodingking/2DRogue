@@ -10,20 +10,69 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+// --- 核心修改: 使用 switch 語句替換 FONT_MAP ---
+void DrawCharacter(GamesEngineeringBase::Window& canvas, char c, int startX, int startY, int scale) {
+    bool pixels[35] = { 0 }; // Initialize all to false
+
+    switch (c) {
+    case '0': { const bool p[] = { 1,1,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,1,1,1,1 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '1': { const bool p[] = { 0,1,0, 0,1,1, 0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,1,1,1, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '2': { const bool p[] = { 1,1,1, 0,0,0,0,1, 0,0,0,0,1, 0,0,1,1,1, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,1,1,1,1 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '3': { const bool p[] = { 1,1,1, 0,0,0,0,1, 0,0,0,0,1, 0,0,1,1,1, 0,0,0,0,1, 0,0,0,0,1, 0,0,1,1,1, 0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '4': { const bool p[] = { 1,0,1, 0,0,1,0,1, 0,0,1,1,1, 1,1,0,0,1, 0,0,0,0,1, 0,0,0,0,1, 0,0,0,0,1, 0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '5': { const bool p[] = { 1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 0,0,0,0,1, 0,0,0,0,1, 1,0,0,0,0, 1,1,1,1,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '6': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '7': { const bool p[] = { 1,1,1,1,1, 0,0,0,0,1, 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0, 0,1,0,0,0, 0,1,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '8': { const bool p[] = { 1,1,1,0,0, 1,0,1,0,0, 1,1,1,0,0, 1,0,1,0,0, 1,0,1,0,0, 1,1,1,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '9': { const bool p[] = { 1,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,1, 0,0,0,0,1, 0,0,0,0,1, 0,1,1,1,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'A': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'F': { const bool p[] = { 1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'P': { const bool p[] = { 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'S': { const bool p[] = { 0,1,1,1,1, 1,0,0,0,0, 0,1,1,1,0, 0,0,0,0,1, 1,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'C': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,0, 1,0,0,0,1, 0,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'O': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'R': { const bool p[] = { 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,1,0,0, 1,0,0,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'E': { const bool p[] = { 1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,1,1,1,1, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case ':': { const bool p[] = { 0,0,0,0,0, 0,1,1,0,0, 0,0,0,0,0, 0,1,1,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    default: break;
+    }
+
+    for (int y = 0; y < 7; ++y) {
+        for (int x = 0; x < 5; ++x) {
+            if (pixels[y * 5 + x]) {
+                for (int sy = 0; sy < scale; ++sy) {
+                    for (int sx = 0; sx < scale; ++sx) {
+                        canvas.draw(startX + x * scale + sx, startY + y * scale + sy, 255, 255, 255);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void DrawText(GamesEngineeringBase::Window& canvas, const char* text, int startX, int startY, int scale) {
+    int currentX = startX;
+    for (int i = 0; text[i] != '\0'; ++i) {
+        char c = text[i];
+        if (c >= 'a' && c <= 'z') c -= 32; // Convert to uppercase
+        DrawCharacter(canvas, c, currentX, startY, scale);
+        currentX += (6 * scale); // 5 for char, 1 for spacing
+    }
+}
+
+
 Game::Game()
     : m_cameraX(0), m_cameraY(0), m_zoom(1.5f), m_isRunning(false),
     m_activeNpcCount(0), m_activeProjectileCount(0), m_gameTimer(0.0f),
     m_spawnPointCount(0), m_bossSpawnPointCount(0), m_playerDamageCooldown(0.0f),
     m_currentLevel(0), m_currentWave(1), m_waveInProgress(false), m_waveCooldownTimer(0.0f),
     m_level2_npcSpawnedCount(0), m_level2_spawnTimer(1.0f), m_bossSpawned(false),
-    m_activeLaserCount(0), m_npcsHitCount(0), m_pickupCount(0)
+    m_activeLaserCount(0), m_npcsHitCount(0), m_pickupCount(0),
+    m_playerScore(0), m_fps(0), m_frameCount(0), m_fpsTimer(0.0f)
 {
     for (int i = 0; i < MAX_NPCS; ++i) m_npcPool[i] = nullptr;
     srand(static_cast<unsigned int>(time(0)));
-}
-
-Game::~Game() {
-    Shutdown();
 }
 
 bool Game::Initialize(const std::string& levelFile) {
@@ -37,6 +86,10 @@ bool Game::Initialize(const std::string& levelFile) {
     if (!Projectile::LoadAssets()) return false;
     if (!NPC::LoadSharedAssets()) return false;
     if (!LaserBeam::LoadAssets("Resources/laser_beam.png")) return false;
+    if (!m_healthSheet.load("Resources/health.png")) {
+        std::cerr << "ERROR: Cannot load health.png" << std::endl;
+        return false;
+    }
 
     const GameObject* objects = m_level.getGameObjects();
     bool playerSpawnPointFound = false;
@@ -64,61 +117,6 @@ bool Game::Initialize(const std::string& levelFile) {
     return true;
 }
 
-void Game::Shutdown() {
-    for (int i = 0; i < m_activeNpcCount; ++i) { if (m_npcPool[i]) delete m_npcPool[i]; }
-    Projectile::FreeAssets();
-    NPC::FreeSharedAssets();
-    LaserBeam::FreeAssets();
-}
-
-void Game::Run() {
-    GamesEngineeringBase::Timer timer;
-    while (m_isRunning) {
-        float deltaTime = timer.dt();
-        if (deltaTime > 0.1f) deltaTime = 0.1f;
-        m_gameTimer += deltaTime;
-        ProcessInput();
-        Update(deltaTime);
-        Render();
-    }
-}
-
-void Game::ProcessInput() {
-    m_window.checkInput();
-    if (m_window.keyPressed(VK_ESCAPE)) m_isRunning = false;
-
-    int wheelDelta = m_window.getMouseWheel();
-    if (wheelDelta != 0) {
-        m_zoom += wheelDelta * 0.001f;
-        if (m_zoom < 0.5f) m_zoom = 0.5f;
-        if (m_zoom > 3.0f) m_zoom = 3.0f;
-        m_level.setZoom(m_zoom);
-    }
-
-    if (m_window.mouseButtonPressed(GamesEngineeringBase::MouseButton::MouseLeft) && m_player.CanFire()) {
-        m_player.ResetFireCooldown();
-        Projectile::Type projType = (m_player.GetCurrentWeapon() == Hero::WeaponType::MACHINE_GUN) ? Projectile::MACHINE_GUN : Projectile::CANNON;
-        SpawnProjectile(m_player.GetFirePosX(), m_player.GetFirePosY(), m_player.getAimAngle(), projType, Projectile::PLAYER);
-    }
-
-    static bool l_pressed = false;
-    if (m_window.keyPressed('L') && !l_pressed) {
-        if (m_player.GetLaserCharges() > 0 && m_player.m_laserCooldown <= 0) {
-            FireLaser();
-        }
-        l_pressed = true;
-    }
-    if (!m_window.keyPressed('L')) {
-        l_pressed = false;
-    }
-
-    static bool q_pressed = false;
-    if (m_window.keyPressed('Q') && !q_pressed) {
-        m_player.SwitchWeapon();
-        q_pressed = true;
-    }
-    if (!m_window.keyPressed('Q')) q_pressed = false;
-}
 
 void Game::Update(float deltaTime) {
     if (!m_isRunning) return;
@@ -144,8 +142,217 @@ void Game::Update(float deltaTime) {
         if (m_cameraY > mapHeightPixels - cameraViewHeight) m_cameraY = mapHeightPixels - cameraViewHeight;
     }
     m_level.setCameraPosition(m_cameraX, m_cameraY);
+
+    m_frameCount++;
+    m_fpsTimer += deltaTime;
+    if (m_fpsTimer >= 1.0f) {
+        m_fps = m_frameCount;
+        m_frameCount = 0;
+        m_fpsTimer -= 1.0f;
+    }
 }
 
+
+void Game::UpdateNPCs(float deltaTime) {
+    for (int i = 0; i < m_activeNpcCount; ++i) {
+        NPC* npc = m_npcPool[i];
+        if (npc) {
+            npc->Update(m_level, deltaTime);
+            npc->UpdateAI(m_player.getX(), m_player.getY(), deltaTime);
+
+            // --- 核心修改: 根據AI決策執行移動 ---
+            if (npc->getCurrentState() == NPC::WALKING) {
+                npc->MoveTowards(m_level, m_player.getX(), m_player.getY(), deltaTime);
+            }
+   
+            if (npc->canFire()) {
+                npc->resetFireCooldown();
+                float dirX = m_player.getX() - npc->getX(); float dirY = m_player.getY() - npc->getY();
+                SpawnProjectile(npc->getX() + npc->getWidth() / 2, npc->getY() + npc->getHeight() / 2, atan2(-dirY, dirX), Projectile::ENEMY_SPHERE, Projectile::ENEMY);
+            }
+        }
+    }
+    for (int i = m_activeNpcCount - 1; i >= 0; --i) {
+        NPC* npc = m_npcPool[i];
+        if (npc && npc->getCurrentState() == NPC::State::DEAD) {
+            switch (npc->getNPCType()) {
+            case NPC::MELEE: m_playerScore += 100; break;
+            case NPC::SHOOTER: m_playerScore += 100; break;
+            case NPC::SNIPER: m_playerScore += 200; break;
+            case NPC::BOSS_AIRCRAFT: m_playerScore += 1000; break;
+            }
+
+            delete npc;
+            m_npcPool[i] = m_npcPool[m_activeNpcCount - 1];
+            m_npcPool[m_activeNpcCount - 1] = nullptr;
+            m_activeNpcCount--;
+            m_waveInProgress = m_activeNpcCount > 0;
+        }
+    }
+}
+
+void Game::RenderUI() {
+    // 1. 武器和技能UI
+    int mainBarX = 10, barY = 10, barW = 30, barH = 30;
+    for (int y = barY; y < barY + barH; ++y) for (int x = mainBarX; x < mainBarX + barW; ++x) m_window.draw(x, y, 100, 100, 100);
+
+    float fireProgress = 0.0f;
+    if (m_player.m_fireMaxCooldown > 0) fireProgress = (m_player.m_fireMaxCooldown - m_player.m_fireCooldown) / m_player.m_fireMaxCooldown;
+    if (fireProgress < 0.0f) fireProgress = 0.0f; if (fireProgress > 1.0f) fireProgress = 1.0f;
+
+    int fireFillHeight = static_cast<int>(barH * fireProgress);
+    unsigned char r, g, b;
+    if (m_player.GetCurrentWeapon() == Hero::WeaponType::MACHINE_GUN) { r = 255; g = 255; b = 0; }
+    else { r = 255; g = 165; b = 0; }
+
+    for (int y = barY + barH - fireFillHeight; y < barY + barH; ++y) {
+        for (int x = mainBarX; x < mainBarX + barW; ++x) {
+            m_window.draw(x, y, r, g, b);
+        }
+    }
+
+    int laserCharges = m_player.GetLaserCharges();
+    int laserBarX = 50;
+    for (int y = barY; y < barY + barH; ++y) for (int x = laserBarX; x < laserBarX + barW; ++x) m_window.draw(x, y, 100, 100, 100);
+
+    if (laserCharges > 0) {
+        float laserProgress = 0.0f;
+        if (m_player.m_laserMaxCooldown > 0) laserProgress = (m_player.m_laserMaxCooldown - m_player.m_laserCooldown) / m_player.m_laserMaxCooldown;
+        if (laserProgress < 0.0f) laserProgress = 0.0f; if (laserProgress > 1.0f) laserProgress = 1.0f;
+
+        int laserFillHeight = static_cast<int>(barH * laserProgress);
+        for (int y = barY + barH - laserFillHeight; y < barY + barH; ++y) {
+            for (int x = laserBarX; x < laserBarX + barW; ++x) {
+                m_window.draw(x, y, 0, 255, 255);
+            }
+        }
+    }
+
+    int triangleSize = 8;
+    int spacing = 4;
+    int startDrawX = laserBarX + barW + 10;
+
+    for (int i = 0; i < laserCharges; ++i) {
+        int currentTriangleX = startDrawX + i * (triangleSize + spacing);
+        int centerY = barY + barH / 2;
+        for (int y = 0; y < triangleSize; ++y) {
+            for (int x = 0; x < y * 2; ++x) {
+                int drawX = currentTriangleX - y + x;
+                int drawY = centerY - triangleSize / 2 + y;
+                if (drawX >= 0 && drawX < (int)m_window.getWidth() && drawY >= 0 && drawY < (int)m_window.getHeight()) {
+                    m_window.draw(drawX, drawY, 0, 150, 255);
+                }
+            }
+        }
+    }
+
+    // --- 2. 繪製血條 ---
+    if (m_healthSheet.width > 0) {
+        int barPosX = 10, barPosY = 50;
+        int frameWidth = m_healthSheet.width / 7;
+        int frameHeight = m_healthSheet.height;
+
+        // --- STEP 1: 在這裡調整縮放比例 ---
+        float healthBarScale = 2.0f; // <-- 將這裡的 1.0f (默認) 改成更大的數字, 例如 2.0f
+
+        // --- STEP 2: 計算縮放後的渲染尺寸 ---
+        int renderWidth = static_cast<int>(frameWidth * healthBarScale);
+        int renderHeight = static_cast<int>(frameHeight * healthBarScale);
+
+        float healthPercent = (float)m_player.getHealth() / m_player.getMaxHealth();
+        if (healthPercent < 0) healthPercent = 0;
+        int healthFrameIndex = 1 + (int)((1.0f - healthPercent) * 5.99f);
+        if (healthFrameIndex > 6) healthFrameIndex = 6;
+        if (m_player.getHealth() <= 0) healthFrameIndex = 6;
+        if (healthPercent >= 1.0f) healthFrameIndex = 1;
+
+        // --- STEP 3 & 4: 更新循環並映射像素 (繪製血條框) ---
+        for (int y = 0; y < renderHeight; ++y) {
+            for (int x = 0; x < renderWidth; ++x) {
+                // 從渲染座標反推回原始貼圖座標
+                unsigned int srcX = static_cast<unsigned int>(x / healthBarScale);
+                unsigned int srcY = static_cast<unsigned int>(y / healthBarScale);
+                if (m_healthSheet.alphaAt(srcX, srcY) > 200) {
+                    m_window.draw(barPosX + x, barPosY + y, m_healthSheet.at(srcX, srcY));
+                }
+            }
+        }
+        // --- STEP 3 & 4: 更新循環並映射像素 (繪製血條填充) ---
+        for (int y = 0; y < renderHeight; ++y) {
+            for (int x = 0; x < renderWidth; ++x) {
+                // 從渲染座標反推回原始貼圖座標，並加上幀偏移
+                unsigned int srcX = static_cast<unsigned int>(x / healthBarScale) + frameWidth * healthFrameIndex;
+                unsigned int srcY = static_cast<unsigned int>(y / healthBarScale);
+                if (m_healthSheet.alphaAt(srcX, srcY) > 200) {
+                    m_window.draw(barPosX + x, barPosY + y, m_healthSheet.at(srcX, srcY));
+                }
+            }
+        }
+    }
+
+    // --- 3. 繪製分數和FPS ---
+    char scoreBuffer[32];
+    sprintf_s(scoreBuffer, "SCORE:%d", m_playerScore);
+    DrawText(m_window, scoreBuffer, m_window.getWidth() - 200, 10, 2);
+
+    char fpsBuffer[16];
+    sprintf_s(fpsBuffer, "FPS:%d", m_fps);
+    DrawText(m_window, fpsBuffer, m_window.getWidth() - 200, 34, 2);
+}
+
+// ... (所有其他函数保持不變) ...
+Game::~Game() {
+    Shutdown();
+}
+void Game::Shutdown() {
+    for (int i = 0; i < m_activeNpcCount; ++i) { if (m_npcPool[i]) delete m_npcPool[i]; }
+    Projectile::FreeAssets();
+    NPC::FreeSharedAssets();
+    LaserBeam::FreeAssets();
+}
+void Game::Run() {
+    GamesEngineeringBase::Timer timer;
+    while (m_isRunning) {
+        float deltaTime = timer.dt();
+        if (deltaTime > 0.1f) deltaTime = 0.1f;
+        m_gameTimer += deltaTime;
+        ProcessInput();
+        Update(deltaTime);
+        Render();
+    }
+}
+void Game::ProcessInput() {
+    m_window.checkInput();
+    if (m_window.keyPressed(VK_ESCAPE)) m_isRunning = false;
+    int wheelDelta = m_window.getMouseWheel();
+    if (wheelDelta != 0) {
+        m_zoom += wheelDelta * 0.001f;
+        if (m_zoom < 0.5f) m_zoom = 0.5f;
+        if (m_zoom > 3.0f) m_zoom = 3.0f;
+        m_level.setZoom(m_zoom);
+    }
+    if (m_window.mouseButtonPressed(GamesEngineeringBase::MouseButton::MouseLeft) && m_player.CanFire()) {
+        m_player.ResetFireCooldown();
+        Projectile::Type projType = (m_player.GetCurrentWeapon() == Hero::WeaponType::MACHINE_GUN) ? Projectile::MACHINE_GUN : Projectile::CANNON;
+        SpawnProjectile(m_player.GetFirePosX(), m_player.GetFirePosY(), m_player.getAimAngle(), projType, Projectile::PLAYER);
+    }
+    static bool l_pressed = false;
+    if (m_window.keyPressed('L') && !l_pressed) {
+        if (m_player.GetLaserCharges() > 0 && m_player.m_laserCooldown <= 0) {
+            FireLaser();
+        }
+        l_pressed = true;
+    }
+    if (!m_window.keyPressed('L')) {
+        l_pressed = false;
+    }
+    static bool q_pressed = false;
+    if (m_window.keyPressed('Q') && !q_pressed) {
+        m_player.SwitchWeapon();
+        q_pressed = true;
+    }
+    if (!m_window.keyPressed('Q')) q_pressed = false;
+}
 void Game::Render() {
     m_window.clear();
     m_level.render(m_window);
@@ -157,59 +364,6 @@ void Game::Render() {
     RenderUI();
     m_window.present();
 }
-
-void Game::RenderUI() {
-    Hero::WeaponType currentWeapon = m_player.GetCurrentWeapon();
-    unsigned char r, g, b;
-    if (currentWeapon == Hero::WeaponType::MACHINE_GUN) { r = 255; g = 255; b = 0; }
-    else { r = 255; g = 165; b = 0; }
-    for (int y = 10; y < 40; ++y) for (int x = 10; x < 40; ++x) m_window.draw(x, y, r, g, b);
-
-    int laserCharges = m_player.GetLaserCharges();
-    for (int y = 10; y < 40; ++y) {
-        for (int x = 50; x < 80; ++x) {
-            if (laserCharges > 0) {
-                m_window.draw(x, y, 0, 255, 255);
-            }
-            else {
-                m_window.draw(x, y, 100, 100, 100);
-            }
-        }
-    }
-}
-
-void Game::UpdateNPCs(float deltaTime) {
-    for (int i = 0; i < m_activeNpcCount; ++i) {
-        NPC* npc = m_npcPool[i];
-        if (npc) {
-            npc->Update(m_level, deltaTime);
-            npc->UpdateAI(m_player.getX(), m_player.getY(), deltaTime);
-            if (npc->getCurrentState() == NPC::WALKING) {
-                float targetX = m_player.getX(); float targetY = m_player.getY();
-                if (npc->getNPCType() == NPC::SHOOTER || npc->getNPCType() == NPC::SNIPER) {
-                    float dirX = targetX - npc->getX(); float dirY = targetY - npc->getY();
-                    if (sqrt(dirX * dirX + dirY * dirY) < 250.0f) { targetX = npc->getX() - dirX; targetY = npc->getY() - dirY; }
-                }
-                npc->MoveTowards(m_level, targetX, targetY, deltaTime);
-            }
-            if (npc->canFire()) {
-                npc->resetFireCooldown();
-                float dirX = m_player.getX() - npc->getX(); float dirY = m_player.getY() - npc->getY();
-                SpawnProjectile(npc->getX() + npc->getWidth() / 2, npc->getY() + npc->getHeight() / 2, atan2(-dirY, dirX), Projectile::ENEMY_SPHERE, Projectile::ENEMY);
-            }
-        }
-    }
-    for (int i = m_activeNpcCount - 1; i >= 0; --i) {
-        if (m_npcPool[i] && m_npcPool[i]->getCurrentState() == NPC::State::DEAD) {
-            delete m_npcPool[i];
-            m_npcPool[i] = m_npcPool[m_activeNpcCount - 1];
-            m_npcPool[m_activeNpcCount - 1] = nullptr;
-            m_activeNpcCount--;
-            m_waveInProgress = m_activeNpcCount > 0;
-        }
-    }
-}
-
 void Game::UpdateProjectiles(float deltaTime) {
     for (int i = 0; i < m_activeProjectileCount; ) {
         if (m_projectilePool[i].IsActive()) {
@@ -222,7 +376,6 @@ void Game::UpdateProjectiles(float deltaTime) {
         }
     }
 }
-
 void Game::UpdateSpawning(float deltaTime) {
     if (m_spawnPointCount == 0) return;
     switch (m_currentLevel) {
@@ -270,11 +423,9 @@ void Game::UpdateSpawning(float deltaTime) {
     }
     }
 }
-
 void Game::CheckCollisions() {
     float heroX = m_player.getX(), heroY = m_player.getY();
     float heroW = m_player.getWidth(), heroH = m_player.getHeight();
-
     m_player.SetSlowed(false);
     for (int i = 0; i < m_activeNpcCount; i++) {
         NPC* npc = m_npcPool[i];
@@ -286,7 +437,6 @@ void Game::CheckCollisions() {
             }
         }
     }
-
     for (int i = 0; i < m_activeProjectileCount; i++) {
         Projectile& proj = m_projectilePool[i];
         if (proj.GetState() != Projectile::FLYING) continue;
@@ -319,7 +469,6 @@ void Game::CheckCollisions() {
             }
         }
     }
-
     for (int i = 0; i < m_pickupCount; ++i) {
         if (!m_laserPickups[i].isCollected) {
             float pickupW = 32.0f, pickupH = 32.0f;
@@ -332,7 +481,6 @@ void Game::CheckCollisions() {
         }
     }
 }
-
 void Game::UpdateLasers(float deltaTime) {
     m_npcsHitCount = 0;
     for (int i = 0; i < m_activeLaserCount; ) {
@@ -361,11 +509,9 @@ void Game::UpdateLasers(float deltaTime) {
         }
     }
 }
-
 void Game::FireLaser() {
     m_player.UseLaserCharge();
-    m_player.m_laserCooldown = 1.0f;
-
+    m_player.m_laserCooldown = m_player.m_laserMaxCooldown;
     NPC* onScreenNpcs[MAX_NPCS];
     int onScreenCount = 0;
     for (int i = 0; i < m_activeNpcCount; ++i) {
@@ -377,39 +523,29 @@ void Game::FireLaser() {
             }
         }
     }
-
     if (onScreenCount == 0) { std::cout << "Laser: No enemies on screen." << std::endl; return; }
-
     for (int i = 0; i < onScreenCount - 1; i++) for (int j = 0; j < onScreenCount - i - 1; j++) {
         if (onScreenNpcs[j]->getHealth() < onScreenNpcs[j + 1]->getHealth()) {
             NPC* temp = onScreenNpcs[j]; onScreenNpcs[j] = onScreenNpcs[j + 1]; onScreenNpcs[j + 1] = temp;
         }
     }
-
     int targets = (onScreenCount < 3) ? onScreenCount : 3;
     for (int i = 0; i < targets; ++i) {
         NPC* target = onScreenNpcs[i];
         float tX = target->getX() + target->getWidth() / 2, tY = target->getY() + target->getHeight() / 2;
-
-        // --- 核心修改: 传递Hero指针而不是坐标 ---
         if (m_activeLaserCount < MAX_LASERS) m_laserPool[m_activeLaserCount++].Activate(&m_player, tX, tY, 0.0f);
         if (m_activeLaserCount < MAX_LASERS) m_laserPool[m_activeLaserCount++].Activate(&m_player, tX, tY, 0.7f);
     }
 }
-
-
 void Game::RenderPickups(float gameTime) {
     for (int i = 0; i < m_pickupCount; ++i) {
         if (!m_laserPickups[i].isCollected) {
             float worldX = (float)m_laserPickups[i].x;
             m_laserPickups[i].floatOffset = sin(gameTime * 4.0f + worldX) * 5.0f;
             float worldY = (float)m_laserPickups[i].y + m_laserPickups[i].floatOffset;
-
             float sX = (worldX - m_cameraX) * m_zoom;
             float sY = (worldY - m_cameraY) * m_zoom;
-
             bool isOnScreen = sX > 0 && sX < m_window.getWidth() && sY > 0 && sY < m_window.getHeight();
-
             if (isOnScreen) {
                 float size = 72 * m_zoom;
                 for (int k = 0; k < size; ++k) for (int j = 0; j <= k; ++j) {
@@ -422,26 +558,20 @@ void Game::RenderPickups(float gameTime) {
             else {
                 float playerScreenX = (m_player.getX() + m_player.getWidth() / 2 - m_cameraX) * m_zoom;
                 float playerScreenY = (m_player.getY() + m_player.getHeight() / 2 - m_cameraY) * m_zoom;
-
                 float border = 30.0f;
                 float winWidth = (float)m_window.getWidth();
                 float winHeight = (float)m_window.getHeight();
-
                 float clampedX = (sX > winWidth - border) ? (winWidth - border) : sX;
                 clampedX = (border > clampedX) ? border : clampedX;
-
                 float clampedY = (sY > winHeight - border) ? (winHeight - border) : sY;
                 clampedY = (border > clampedY) ? border : clampedY;
-
                 float angle = atan2(sY - clampedY, sX - clampedX);
-
                 float arrowSize = 45.0f;
                 float x1 = clampedX, y1 = clampedY;
                 float x2 = clampedX - arrowSize * cos(angle + 0.5f);
                 float y2 = clampedY - arrowSize * sin(angle + 0.5f);
                 float x3 = clampedX - arrowSize * cos(angle - 0.5f);
                 float y3 = clampedY - arrowSize * sin(angle - 0.5f);
-
                 for (int j = 0; j < 20; ++j) {
                     m_window.draw((int)(x1 + (x2 - x1) * j / 20.0f), (int)(y1 + (y2 - y1) * j / 20.0f), 255, 255, 0);
                     m_window.draw((int)(x1 + (x3 - x1) * j / 20.0f), (int)(y1 + (y3 - y1) * j / 20.0f), 255, 255, 0);
@@ -450,7 +580,6 @@ void Game::RenderPickups(float gameTime) {
         }
     }
 }
-
 void Game::SpawnNPC(int x, int y, NPC::NPCType type) {
     if (m_activeNpcCount >= MAX_NPCS) return;
     NPC* newNpc = new NPC(type);
@@ -462,7 +591,6 @@ void Game::SpawnNPC(int x, int y, NPC::NPCType type) {
         delete newNpc;
     }
 }
-
 void Game::SpawnProjectile(float startX, float startY, float angle, Projectile::Type type, Projectile::Owner owner) {
     if (m_activeProjectileCount >= MAX_PROJECTILES) return;
     m_projectilePool[m_activeProjectileCount].Activate(startX, startY, angle, type, owner);

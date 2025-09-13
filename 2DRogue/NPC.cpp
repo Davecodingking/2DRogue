@@ -45,28 +45,28 @@ NPC::NPC(NPCType type)
     m_frameCountWalk(12), m_frameCountExplode(7),
     m_currentFrame(0.0f), m_animationSpeed(10.0f),
     m_explodeAnimationSpeed(15.0f), m_renderScale(0.3f), m_direction(0),
-    m_preferredDistance(300.0f), m_fireCooldown(0.0f), m_fireRate(2.0f),
+    m_preferredDistance(400.0f), m_fireCooldown(0.0f), m_fireRate(2.0f),
     m_bossAttackTimer(0.0f)
 {
     // Set stats based on type
     switch (m_type) {
     case MELEE:
-        InitializeStats(50, 100.0f, 0.15f);
+		InitializeStats(50, 150.0f, 0.15f);//health 50, speed 150 render scale 0.15
         break;
     case SHOOTER:
         InitializeStats(40, 80.0f, 0.3f);
-        m_preferredDistance = 300.0f;
-        m_fireRate = 2.0f;
+        m_preferredDistance = 500.0f;
+        m_fireRate = 1.0f;
         break;
     case SNIPER:
         InitializeStats(60, 60.0f, 4.0f);
-        m_preferredDistance = 500.0f;
-        m_fireRate = 3.5f;
+        m_preferredDistance = 800.0f;
+        m_fireRate = 1.5f;
         break;
     case BOSS_AIRCRAFT:
         InitializeStats(2000, 250.0f, 5.0f);
-        m_preferredDistance = 400.0f;
-        m_fireRate = 0.2f;
+        m_preferredDistance = 500.0f;
+        m_fireRate = 0.3f;
         break;
     }
 }
@@ -236,7 +236,7 @@ void NPC::MoveTowards(Level& level, float targetX, float targetY, float deltaTim
 
 void NPC::CheckMapCollision(Level& level, float& newX, float& newY) {
     // --- NEW: Boss ignores obstacles ---
-    if (m_type == BOSS_AIRCRAFT) {
+    if (m_type == BOSS_AIRCRAFT || m_type == SNIPER) {
         x = newX;
         y = newY;
         return;

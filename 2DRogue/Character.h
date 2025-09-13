@@ -15,7 +15,6 @@ public:
 
     virtual void TakeDamage(int damage);
 
-    // --- State Effects ---
     void ApplySlow(float duration);
     void ApplyStun(float duration);
 
@@ -24,7 +23,10 @@ public:
     float getWidth() const { return width; }
     float getHeight() const { return height; }
     bool getIsAlive() const { return isAlive; }
-    int getHealth() const { return currentHealth; } // 新增：允许子类和外部访问血量
+
+    // --- 新增: 獲取當前和最大生命值 ---
+    int getHealth() const { return currentHealth; }
+    int getMaxHealth() const { return maxHealth; }
 
     virtual void SetPosition(float startX, float startY);
 
@@ -38,7 +40,7 @@ protected:
     int maxHealth;
     bool isAlive;
 
-    // Effect timers
     float m_slowTimer;
     float m_stunTimer;
 };
+

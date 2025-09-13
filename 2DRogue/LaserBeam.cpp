@@ -31,7 +31,7 @@ void LaserBeam::FreeAssets() {
 
 void LaserBeam::Activate(Hero* owner, float targetX, float targetY, float delay) {
     m_isActive = true;
-    m_lifeTimer = 0.5f;
+    m_lifeTimer = 0.3f;
     m_owner = owner;
     m_targetX = targetX;
     m_targetY = targetY;
@@ -60,7 +60,7 @@ bool LaserBeam::Update(float deltaTime) {
             float dx = m_targetX - m_actualStartX;
             float dy = m_targetY - m_actualStartY;
             m_angle = atan2(dy, dx);
-            m_length = sqrt(dx * dx + dy * dy) + 500;
+            m_length = sqrt(dx * dx + dy * dy) + 1500;
 
             m_isInitialized = true; // 标记为已初始化
         }

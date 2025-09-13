@@ -35,7 +35,11 @@ public:
     void AddLaserCharges(int amount);
     void UseLaserCharge();
     int GetLaserCharges() const;
+
+    float m_fireCooldown;
+    float m_fireMaxCooldown; // 當前武器的最大冷卻時間
     float m_laserCooldown; // 将激光冷却时间设为公开，方便Game类访问
+    float m_laserMaxCooldown;
 
 private:
     void HandleInput(Level& level, float deltaTime);
@@ -63,7 +67,6 @@ private:
     WeaponType m_currentWeapon;
     float m_machineGunCooldown;
     float m_cannonCooldown;
-    float m_fireCooldown;
 
     // --- 新增: 激光充能次数 ---
     int m_laserCharges;

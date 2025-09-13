@@ -31,10 +31,14 @@ Hero::Hero() {
     m_isSlowed = false;
 
     m_currentWeapon = WeaponType::MACHINE_GUN;
-    m_machineGunCooldown = 0.06f;
+    m_machineGunCooldown = 0.08f;
     m_cannonCooldown = 2.5f;
-    m_laserCooldown = 10.0f;
+
+    m_laserMaxCooldown = 10.0f;
+    m_laserCooldown = 0.0f; // 初始狀態為可用
+
     m_fireCooldown = 0.0f;
+    m_fireMaxCooldown = m_machineGunCooldown; // --- 新增: 默認為機槍的CD ---
     m_laserCharges = 0;
 }
 
@@ -158,20 +162,20 @@ bool Hero::CanFire() {
 }
 
 void Hero::ResetFireCooldown() {
-    if (m_currentWeapon == WeaponType::MACHINE_GUN) {
-        m_fireCooldown = m_machineGunCooldown;
-    }
-    else {
-        m_fireCooldown = m_cannonCooldown;
-    }
+    // --- 修改: 直接使用 m_fireMaxCooldown ---
+    m_fireCooldown = m_fireMaxCooldown;
 }
 
 void Hero::SwitchWeapon() {
     if (m_currentWeapon == WeaponType::MACHINE_GUN) {
         m_currentWeapon = WeaponType::CANNON;
+        // --- 修改: 同步更新最大冷卻時間 ---
+        m_fireMaxCooldown = m_cannonCooldown;
     }
     else {
         m_currentWeapon = WeaponType::MACHINE_GUN;
+        // --- 修改: 同步更新最大冷卻時間 ---
+        m_fireMaxCooldown = m_machineGunCooldown;
     }
 }
 
