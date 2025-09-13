@@ -7,7 +7,7 @@
 #include <ctime>
 #include <cmath>
 #include <windows.h> 
-#include <cstdio> // 新增：用于文件删除功能
+#include <cstdio> 
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -316,7 +316,6 @@ void Game::RenderMainMenu() {
 }
 
 void Game::ProcessInputPlaying(float deltaTime) {
-    // 在死亡或胜利动画期间禁用玩家输入
     if (m_playingState != PlayingState::NORMAL) {
         return;
     }
@@ -377,7 +376,7 @@ void Game::UpdatePlaying(float deltaTime) {
         if (m_player.getHealth() <= 0) {
             m_playingState = PlayingState::PLAYER_DYING;
             m_endGameTimer = 0.0f;
-            return; // 立即进入死亡状态，不执行本帧的后续更新
+            return;
         }
 
         if (m_playerDamageCooldown > 0) m_playerDamageCooldown -= deltaTime;
@@ -401,7 +400,7 @@ void Game::UpdatePlaying(float deltaTime) {
     }
     case PlayingState::PLAYER_DYING: {
         m_endGameTimer += deltaTime;
-        if (m_endGameTimer > 5.0f) { // 3秒显示 + 2秒渐黑
+        if (m_endGameTimer > 5.0f) {
             ReturnToMainMenu();
         }
         break;
@@ -424,33 +423,31 @@ void Game::RenderPlaying() {
     for (int i = 0; i < m_activeProjectileCount; ++i) if (m_projectilePool[i].IsActive()) m_projectilePool[i].Render(m_window, m_cameraX, m_cameraY, m_zoom);
     for (int i = 0; i < m_activeLaserCount; ++i) if (m_laserPool[i].IsActive()) m_laserPool[i].Render(m_window, m_cameraX, m_cameraY, m_zoom);
 
-    // 只有在正常游戏时才渲染UI
     if (m_playingState == PlayingState::NORMAL) {
         RenderUI();
     }
 
-    // 根据游戏结束状态渲染额外内容
     switch (m_playingState) {
     case PlayingState::PLAYER_DYING: {
         const char* text = "U DIED";
-        int textWidth = 0; for (int i = 0; text[i] != '\0'; ++i) textWidth += (6 * 8); // 8是字体缩放
+        int textWidth = 0; for (int i = 0; text[i] != '\0'; ++i) textWidth += (6 * 8);
         DrawText(m_window, text, m_window.getWidth() / 2 - textWidth / 2, m_window.getHeight() / 2 - 28, 8);
 
         if (m_endGameTimer > 3.0f) {
-            float alpha = (m_endGameTimer - 3.0f) / 2.0f; // 从3秒到5秒，alpha从0到1
+            float alpha = (m_endGameTimer - 3.0f) / 2.0f;
             if (alpha > 1.0f) alpha = 1.0f;
             DrawFullscreenOverlay(0, 0, 0, alpha);
         }
         break;
     }
     case PlayingState::VICTORY: {
-        float alpha = m_endGameTimer / 3.0f; // 从0秒到3秒，alpha从0到1
+        float alpha = m_endGameTimer / 3.0f;
         if (alpha > 1.0f) alpha = 1.0f;
         DrawFullscreenOverlay(255, 255, 255, alpha);
 
-        const char* text = "ALL CLEAR";
-        int textWidth = 0; for (int i = 0; text[i] != '\0'; ++i) textWidth += (6 * 8); // 8是字体缩放
-        DrawText(m_window, text, m_window.getWidth() / 2 - textWidth / 2, m_window.getHeight() / 2 - 28, 8);
+        const char* victoryText = "ALL CLEAR";
+        int textWidth = 0; for (int i = 0; victoryText[i] != '\0'; ++i) textWidth += (6 * 8);
+        DrawText(m_window, victoryText, m_window.getWidth() / 2 - textWidth / 2, m_window.getHeight() / 2 - 28, 8);
         break;
     }
     default:
@@ -470,7 +467,14 @@ void Game::ProcessInputPaused() {
             m_gameState = GameState::PLAYING;
         }
         else if (PtInRect(&m_pauseQuitButtonRect, mousePos)) {
-            ReturnToMainMenu();
+            // ======================================================================
+            // ==                     代码修复: 修正退出逻辑                       ==
+            // ======================================================================
+            // 直接返回主菜单，不再调用会删除存档的 ReturnToMainMenu()
+            m_gameState = GameState::MAIN_MENU;
+            m_showTutorial = true;
+            ResetLevelState();
+            // ======================================================================
         }
     }
     was_mouse_pressed = is_mouse_pressed;
@@ -922,10 +926,13 @@ void Game::UpdateCamera() {
     }
     m_level.setCameraPosition(m_cameraX, m_cameraY);
 }
+
 void Game::StartNewGame() {
-    LoadLevel("Resources/level1.json");
     m_playerScore = 0;
+    m_currentWave = 1;
+    LoadLevel("Resources/level1.json");
 }
+
 void Game::SaveGame() {
     if (m_currentLevel != 1) {
         std::cout << "Save is only available for Level 1." << std::endl;
@@ -943,6 +950,7 @@ void Game::SaveGame() {
     saveFile.close();
     std::cout << "Game saved. Score: " << data.score << ", Wave: " << data.wave << std::endl;
 }
+
 void Game::LoadGame() {
     std::ifstream saveFile(SAVE_FILE_NAME, std::ios::binary);
     if (!saveFile.is_open()) {
@@ -962,10 +970,20 @@ void Game::LoadGame() {
     LoadLevel("Resources/level1.json");
     m_playerScore = data.score;
     m_currentWave = data.wave;
+
+    for (int i = 0; i < m_activeNpcCount; ++i) {
+        delete m_npcPool[i];
+        m_npcPool[i] = nullptr;
+    }
+    m_activeNpcCount = 0;
+    m_waveInProgress = false;
+    m_waveCooldownTimer = 4.0f;
+
     m_showLoadMessage = true;
     m_loadMessageTimer = 4.0f;
     std::cout << "Game loaded. Score: " << m_playerScore << ", Wave: " << m_currentWave << std::endl;
 }
+
 void Game::ResetLevelState() {
     for (int i = 0; i < m_activeNpcCount; ++i) {
         delete m_npcPool[i];
@@ -978,12 +996,11 @@ void Game::ResetLevelState() {
     m_pickupCount = 0;
     m_waveInProgress = false;
     m_waveCooldownTimer = 0.0f;
-    m_currentWave = 1;
     m_level2_npcSpawnedCount = 0;
     m_bossSpawned = false;
     m_player.RestoreFullHealth();
-    m_playingState = PlayingState::NORMAL; // 重置子状态
-    m_endGameTimer = 0.0f;                // 重置计时器
+    m_playingState = PlayingState::NORMAL;
+    m_endGameTimer = 0.0f;
 }
 
 void Game::LoadLevel(const std::string& levelFile) {
@@ -1022,12 +1039,7 @@ void Game::LoadLevel(const std::string& levelFile) {
     UpdateCamera();
 }
 
-// ======================================================================
-// ==                  新增代码: 游戏结束辅助函数                    ==
-// ======================================================================
 void Game::DrawFullscreenOverlay(int r, int g, int b, float alpha) {
-    // 这个函数通过读取背景像素并与覆盖色进行混合，来模拟Alpha透明效果
-    // 因为基础框架的draw函数不支持透明度
     if (alpha <= 0.0f) return;
     if (alpha > 1.0f) alpha = 1.0f;
 
@@ -1052,19 +1064,12 @@ void Game::DrawFullscreenOverlay(int r, int g, int b, float alpha) {
 }
 
 void Game::ReturnToMainMenu() {
-    // ======================================================================
-    // ==                     代码修改: 删除存档文件                       ==
-    // ======================================================================
-    // 在返回主菜单时（无论是死亡还是胜利），删除旧的存档文件
-    // 确保下一次是全新的开始。
     if (remove(SAVE_FILE_NAME) == 0) {
         std::cout << "Save file deleted." << std::endl;
     }
-    // ======================================================================
 
     m_gameState = GameState::MAIN_MENU;
-    m_showTutorial = true; // 回到主菜单时，重置教程显示状态
+    m_showTutorial = true;
     ResetLevelState();
 }
-// ======================================================================
 
