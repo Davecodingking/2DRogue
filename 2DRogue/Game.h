@@ -36,6 +36,11 @@ private:
     void FireLaser();
     void RenderPickups(float deltaTime);
 
+    // --- 新增: 存档与读档函数 ---
+    void SaveGame();
+    void LoadGame();
+    void ResetLevelState(); // 辅助函数，用于清空关卡
+
     GamesEngineeringBase::Window m_window;
     Level m_level;
     Hero m_player;
@@ -86,11 +91,18 @@ private:
     float m_zoom;
     bool m_isRunning;
 
-    // --- 新增: UI相關成員變量 ---
+    // --- UI 相关成员变量 ---
     GamesEngineeringBase::Image m_healthSheet;
+    GamesEngineeringBase::Image m_machineGunIcon;
+    GamesEngineeringBase::Image m_cannonIcon;
+    GamesEngineeringBase::Image m_laserGunIcon;
     int m_playerScore;
     int m_fps;
     int m_frameCount;
     float m_fpsTimer;
+
+    // --- 新增: 读档提示信息相关变量 ---
+    bool m_showLoadMessage;
+    float m_loadMessageTimer;
 };
 

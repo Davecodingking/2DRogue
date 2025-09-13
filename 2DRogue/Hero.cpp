@@ -162,19 +162,16 @@ bool Hero::CanFire() {
 }
 
 void Hero::ResetFireCooldown() {
-    // --- 修改: 直接使用 m_fireMaxCooldown ---
     m_fireCooldown = m_fireMaxCooldown;
 }
 
 void Hero::SwitchWeapon() {
     if (m_currentWeapon == WeaponType::MACHINE_GUN) {
         m_currentWeapon = WeaponType::CANNON;
-        // --- 修改: 同步更新最大冷卻時間 ---
         m_fireMaxCooldown = m_cannonCooldown;
     }
     else {
         m_currentWeapon = WeaponType::MACHINE_GUN;
-        // --- 修改: 同步更新最大冷卻時間 ---
         m_fireMaxCooldown = m_machineGunCooldown;
     }
 }
@@ -198,10 +195,14 @@ float Hero::GetFirePosX() const {
 }
 
 float Hero::GetFirePosY() const {
-    // --- 修正: 确保发射点在上班身贴图的垂直中心 ---
     if (m_torsoAnimations[0].height > 0) {
         return y + m_torsoOffsetY + (m_torsoAnimations[0].height * m_renderScale) / 2.0f;
     }
     return y + height / 2.0f;
 }
 
+// --- 新增: 恢复生命值的实现 ---
+void Hero::RestoreFullHealth() {
+    currentHealth = maxHealth;
+    isAlive = true;
+}

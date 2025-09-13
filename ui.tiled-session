@@ -1,11 +1,22 @@
 {
-    "activeFile": "2DRogue/Resources/level2.json",
+    "activeFile": "2DRogue/Resources/level1.json",
     "expandedProjectPaths": [
-        ".",
-        "2DRogue"
+        "2DRogue",
+        "."
     ],
     "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
+        "2DRogue/Resources/level1.json": {
+            "expandedObjectLayers": [
+                4
+            ],
+            "scale": 0.33,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 1869.6969696969697,
+                "y": 868.1818181818181
+            }
+        },
         "2DRogue/Resources/level2.json": {
             "scale": 0.037109375,
             "selectedLayer": 4,
@@ -14,10 +25,23 @@
                 "y": 3813.0526315789475
             }
         },
+        "2dpixx_-_free_2d_topdown_shooter_pack/level1.tmx": {
+            "expandedObjectLayers": [
+                4
+            ],
+            "scale": 0.33,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 1878.7878787878788,
+                "y": 395.4545454545454
+            }
+        },
         "2dpixx_-_free_2d_topdown_shooter_pack/main_tileset.tsx": {
+            "dynamicWrapping": false,
             "scaleInDock": 1
         },
         "hp_ui.tsx": {
+            "dynamicWrapping": true,
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -32,13 +56,17 @@
     "openFiles": [
         "ui.tsx",
         "hp_ui.tsx",
-        "2DRogue/Resources/level2.json"
+        "2DRogue/Resources/level2.json",
+        "2DRogue/Resources/level1.json",
+        "2dpixx_-_free_2d_topdown_shooter_pack/level1.tmx"
     ],
     "project": "ui.tiled-project",
     "recentFiles": [
         "ui.tsx",
         "hp_ui.tsx",
-        "2DRogue/Resources/level2.json"
+        "2DRogue/Resources/level2.json",
+        "2dpixx_-_free_2d_topdown_shooter_pack/level1.tmx",
+        "2DRogue/Resources/level1.json"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {

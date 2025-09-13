@@ -51,7 +51,7 @@ void Projectile::Activate(float startX, float startY, float angle, Type type, Ow
 
     switch (m_type) {
     case MACHINE_GUN:
-        m_speed = 800.0f; m_damage = 1; m_renderScale = 0.035f;
+        m_speed = 800.0f; m_damage = 0.5; m_renderScale = 0.035f;
         m_width = s_bulletImage.width * m_renderScale;
         m_height = s_bulletImage.height * m_renderScale;
         break;

@@ -31,10 +31,13 @@ public:
     float GetFirePosX() const;
     float GetFirePosY() const;
 
-    // --- 新增: 激光技能相关函数 ---
+    // --- 激光技能相关函数 ---
     void AddLaserCharges(int amount);
     void UseLaserCharge();
     int GetLaserCharges() const;
+
+    // --- 新增: 恢复生命值 ---
+    void RestoreFullHealth();
 
     float m_fireCooldown;
     float m_fireMaxCooldown; // 當前武器的最大冷卻時間
@@ -68,7 +71,6 @@ private:
     float m_machineGunCooldown;
     float m_cannonCooldown;
 
-    // --- 新增: 激光充能次数 ---
     int m_laserCharges;
 };
 

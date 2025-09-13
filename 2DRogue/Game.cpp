@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "LaserBeam.h"
 #include <iostream>
+#include <fstream> // 用于文件读写
 #include <cstdlib>
 #include <string>
 #include <ctime>
@@ -9,6 +10,16 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+// 定义存档文件名称
+const char* SAVE_FILE_NAME = "savegame.dat";
+
+// 定义用于存档的数据结构
+struct SaveData {
+    int score;
+    int wave;
+};
+
 
 // --- 核心修改: 使用 switch 語句替換 FONT_MAP ---
 void DrawCharacter(GamesEngineeringBase::Window& canvas, char c, int startX, int startY, int scale) {
@@ -26,13 +37,22 @@ void DrawCharacter(GamesEngineeringBase::Window& canvas, char c, int startX, int
     case '8': { const bool p[] = { 1,1,1,0,0, 1,0,1,0,0, 1,1,1,0,0, 1,0,1,0,0, 1,0,1,0,0, 1,1,1,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case '9': { const bool p[] = { 1,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,1, 0,0,0,0,1, 0,0,0,0,1, 0,1,1,1,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'A': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'D': { const bool p[] = { 1,1,1,0,0, 1,0,0,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,1,0, 1,1,1,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'L': { const bool p[] = { 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 1,1,1,1,1, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'B': { const bool p[] = { 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'F': { const bool p[] = { 1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'I': { const bool p[] = { 1,1,1, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 1,1,1, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'G': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,0, 1,0,1,1,1, 1,0,0,0,1, 0,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'H': { const bool p[] = { 1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'T': { const bool p[] = { 1,1,1,1,1, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'P': { const bool p[] = { 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,0,0,0, 1,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'S': { const bool p[] = { 0,1,1,1,1, 1,0,0,0,0, 0,1,1,1,0, 0,0,0,0,1, 1,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'C': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,0, 1,0,0,0,1, 0,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'O': { const bool p[] = { 0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'R': { const bool p[] = { 1,1,1,1,0, 1,0,0,0,1, 1,1,1,1,0, 1,0,1,0,0, 1,0,0,1,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case 'E': { const bool p[] = { 1,1,1,1,1, 1,0,0,0,0, 1,1,1,1,0, 1,0,0,0,0, 1,1,1,1,1, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case 'V': { const bool p[] = { 1,0,0,0,1, 1,0,0,0,1, 0,1,0,1,0, 0,1,0,1,0, 0,0,1,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
+    case '/': { const bool p[] = { 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0, 0,1,0,0,0, 1,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     case ':': { const bool p[] = { 0,0,0,0,0, 0,1,1,0,0, 0,0,0,0,0, 0,1,1,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0 }; for (int i = 0; i < 35; ++i) pixels[i] = p[i]; break; }
     default: break;
     }
@@ -69,7 +89,8 @@ Game::Game()
     m_currentLevel(0), m_currentWave(1), m_waveInProgress(false), m_waveCooldownTimer(0.0f),
     m_level2_npcSpawnedCount(0), m_level2_spawnTimer(1.0f), m_bossSpawned(false),
     m_activeLaserCount(0), m_npcsHitCount(0), m_pickupCount(0),
-    m_playerScore(0), m_fps(0), m_frameCount(0), m_fpsTimer(0.0f)
+    m_playerScore(0), m_fps(0), m_frameCount(0), m_fpsTimer(0.0f),
+    m_showLoadMessage(false), m_loadMessageTimer(0.0f) // 初始化新成员
 {
     for (int i = 0; i < MAX_NPCS; ++i) m_npcPool[i] = nullptr;
     srand(static_cast<unsigned int>(time(0)));
@@ -90,6 +111,19 @@ bool Game::Initialize(const std::string& levelFile) {
         std::cerr << "ERROR: Cannot load health.png" << std::endl;
         return false;
     }
+    if (!m_machineGunIcon.load("Resources/machinegun.png")) {
+        std::cerr << "ERROR: Cannot load machinegun.png" << std::endl;
+        return false;
+    }
+    if (!m_cannonIcon.load("Resources/plasmagun.png")) {
+        std::cerr << "ERROR: Cannot load plasmagun.png" << std::endl;
+        return false;
+    }
+    if (!m_laserGunIcon.load("Resources/lasergun.png")) {
+        std::cerr << "ERROR: Cannot load lasergun.png" << std::endl;
+        return false;
+    }
+
 
     const GameObject* objects = m_level.getGameObjects();
     bool playerSpawnPointFound = false;
@@ -121,6 +155,15 @@ bool Game::Initialize(const std::string& levelFile) {
 void Game::Update(float deltaTime) {
     if (!m_isRunning) return;
     if (m_playerDamageCooldown > 0) m_playerDamageCooldown -= deltaTime;
+
+    // 更新读档提示信息计时器
+    if (m_showLoadMessage) {
+        m_loadMessageTimer -= deltaTime;
+        if (m_loadMessageTimer <= 0) {
+            m_showLoadMessage = false;
+        }
+    }
+
     UpdateSpawning(deltaTime);
     m_player.Update(m_level, deltaTime);
     UpdateNPCs(deltaTime);
@@ -160,11 +203,10 @@ void Game::UpdateNPCs(float deltaTime) {
             npc->Update(m_level, deltaTime);
             npc->UpdateAI(m_player.getX(), m_player.getY(), deltaTime);
 
-            // --- 核心修改: 根據AI決策執行移動 ---
             if (npc->getCurrentState() == NPC::WALKING) {
                 npc->MoveTowards(m_level, m_player.getX(), m_player.getY(), deltaTime);
             }
-   
+
             if (npc->canFire()) {
                 npc->resetFireCooldown();
                 float dirX = m_player.getX() - npc->getX(); float dirY = m_player.getY() - npc->getY();
@@ -192,7 +234,28 @@ void Game::UpdateNPCs(float deltaTime) {
 }
 
 void Game::RenderUI() {
-    // 1. 武器和技能UI
+    auto drawIcon = [&](const GamesEngineeringBase::Image& icon, int centerX, int topY, int size) {
+        if (icon.width == 0) return;
+        int renderSize = size;
+        int startX = centerX - renderSize / 2;
+        int startY = topY;
+        for (int y = 0; y < renderSize; ++y) {
+            for (int x = 0; x < renderSize; ++x) {
+                float scaleX = static_cast<float>(x) / renderSize;
+                float scaleY = static_cast<float>(y) / renderSize;
+                unsigned int srcX = static_cast<unsigned int>(scaleX * icon.width);
+                unsigned int srcY = static_cast<unsigned int>(scaleY * icon.height);
+                if (srcX < icon.width && srcY < icon.height && icon.alphaAt(srcX, srcY) > 200) {
+                    int drawX = startX + x;
+                    int drawY = startY + y;
+                    if (drawX >= 0 && drawX < static_cast<int>(m_window.getWidth()) && drawY >= 0 && drawY < static_cast<int>(m_window.getHeight())) {
+                        m_window.draw(drawX, drawY, icon.at(srcX, srcY));
+                    }
+                }
+            }
+        }
+        };
+
     int mainBarX = 10, barY = 10, barW = 30, barH = 30;
     for (int y = barY; y < barY + barH; ++y) for (int x = mainBarX; x < mainBarX + barW; ++x) m_window.draw(x, y, 100, 100, 100);
 
@@ -219,13 +282,25 @@ void Game::RenderUI() {
         float laserProgress = 0.0f;
         if (m_player.m_laserMaxCooldown > 0) laserProgress = (m_player.m_laserMaxCooldown - m_player.m_laserCooldown) / m_player.m_laserMaxCooldown;
         if (laserProgress < 0.0f) laserProgress = 0.0f; if (laserProgress > 1.0f) laserProgress = 1.0f;
-
         int laserFillHeight = static_cast<int>(barH * laserProgress);
         for (int y = barY + barH - laserFillHeight; y < barY + barH; ++y) {
             for (int x = laserBarX; x < laserBarX + barW; ++x) {
                 m_window.draw(x, y, 0, 255, 255);
             }
         }
+    }
+
+    int iconTopY = barY + barH + 5;
+    int iconSize = 30;
+    if (m_player.GetCurrentWeapon() == Hero::WeaponType::MACHINE_GUN) {
+        drawIcon(m_machineGunIcon, mainBarX + barW / 2, iconTopY, iconSize);
+    }
+    else {
+        drawIcon(m_cannonIcon, mainBarX + barW / 2, iconTopY, iconSize);
+    }
+
+    if (laserCharges > 0) {
+        drawIcon(m_laserGunIcon, laserBarX + barW / 2, iconTopY, iconSize);
     }
 
     int triangleSize = 8;
@@ -246,16 +321,11 @@ void Game::RenderUI() {
         }
     }
 
-    // --- 2. 繪製血條 ---
     if (m_healthSheet.width > 0) {
-        int barPosX = 10, barPosY = 50;
+        int barPosX = 10, barPosY = 80;
         int frameWidth = m_healthSheet.width / 7;
         int frameHeight = m_healthSheet.height;
-
-        // --- STEP 1: 在這裡調整縮放比例 ---
-        float healthBarScale = 2.0f; // <-- 將這裡的 1.0f (默認) 改成更大的數字, 例如 2.0f
-
-        // --- STEP 2: 計算縮放後的渲染尺寸 ---
+        float healthBarScale = 2.0f;
         int renderWidth = static_cast<int>(frameWidth * healthBarScale);
         int renderHeight = static_cast<int>(frameHeight * healthBarScale);
 
@@ -266,10 +336,8 @@ void Game::RenderUI() {
         if (m_player.getHealth() <= 0) healthFrameIndex = 6;
         if (healthPercent >= 1.0f) healthFrameIndex = 1;
 
-        // --- STEP 3 & 4: 更新循環並映射像素 (繪製血條框) ---
         for (int y = 0; y < renderHeight; ++y) {
             for (int x = 0; x < renderWidth; ++x) {
-                // 從渲染座標反推回原始貼圖座標
                 unsigned int srcX = static_cast<unsigned int>(x / healthBarScale);
                 unsigned int srcY = static_cast<unsigned int>(y / healthBarScale);
                 if (m_healthSheet.alphaAt(srcX, srcY) > 200) {
@@ -277,10 +345,8 @@ void Game::RenderUI() {
                 }
             }
         }
-        // --- STEP 3 & 4: 更新循環並映射像素 (繪製血條填充) ---
         for (int y = 0; y < renderHeight; ++y) {
             for (int x = 0; x < renderWidth; ++x) {
-                // 從渲染座標反推回原始貼圖座標，並加上幀偏移
                 unsigned int srcX = static_cast<unsigned int>(x / healthBarScale) + frameWidth * healthFrameIndex;
                 unsigned int srcY = static_cast<unsigned int>(y / healthBarScale);
                 if (m_healthSheet.alphaAt(srcX, srcY) > 200) {
@@ -290,7 +356,6 @@ void Game::RenderUI() {
         }
     }
 
-    // --- 3. 繪製分數和FPS ---
     char scoreBuffer[32];
     sprintf_s(scoreBuffer, "SCORE:%d", m_playerScore);
     DrawText(m_window, scoreBuffer, m_window.getWidth() - 200, 10, 2);
@@ -298,9 +363,30 @@ void Game::RenderUI() {
     char fpsBuffer[16];
     sprintf_s(fpsBuffer, "FPS:%d", m_fps);
     DrawText(m_window, fpsBuffer, m_window.getWidth() - 200, 34, 2);
+
+    if (m_currentLevel == 1 && m_currentWave <= 3) {
+        char waveBuffer[16];
+        sprintf_s(waveBuffer, "WAVE %d/3", m_currentWave);
+        int textWidth = 0;
+        for (int i = 0; waveBuffer[i] != '\0'; ++i) textWidth += (6 * 3);
+        DrawText(m_window, waveBuffer, m_window.getWidth() / 2 - textWidth / 2, 20, 3);
+    }
+    else if (m_currentLevel == 2 && m_bossSpawned) {
+        const char* bossText = "BOSS FIGHT";
+        int textWidth = 0;
+        for (int i = 0; bossText[i] != '\0'; ++i) textWidth += (6 * 5);
+        DrawText(m_window, bossText, m_window.getWidth() / 2 - textWidth / 2, 20, 5);
+    }
+
+    // 绘制读档提示信息
+    if (m_showLoadMessage) {
+        const char* loadText = "SAVE LOADED";
+        int textWidth = 0;
+        for (int i = 0; loadText[i] != '\0'; ++i) textWidth += (6 * 4);
+        DrawText(m_window, loadText, m_window.getWidth() / 2 - textWidth / 2, 60, 4);
+    }
 }
 
-// ... (所有其他函数保持不變) ...
 Game::~Game() {
     Shutdown();
 }
@@ -352,7 +438,23 @@ void Game::ProcessInput() {
         q_pressed = true;
     }
     if (!m_window.keyPressed('Q')) q_pressed = false;
+
+    // --- 新增: 存档与读档的按键处理 ---
+    static bool f5_pressed = false;
+    if (m_window.keyPressed(VK_F5) && !f5_pressed) {
+        SaveGame();
+        f5_pressed = true;
+    }
+    if (!m_window.keyPressed(VK_F5)) f5_pressed = false;
+
+    static bool f9_pressed = false;
+    if (m_window.keyPressed(VK_F9) && !f9_pressed) {
+        LoadGame();
+        f9_pressed = true;
+    }
+    if (!m_window.keyPressed(VK_F9)) f9_pressed = false;
 }
+
 void Game::Render() {
     m_window.clear();
     m_level.render(m_window);
@@ -382,20 +484,30 @@ void Game::UpdateSpawning(float deltaTime) {
     case 1: {
         if (!m_waveInProgress && m_activeNpcCount == 0) {
             if (m_currentWave > 3) return;
-            if (m_waveCooldownTimer <= 0) m_waveCooldownTimer = 5.0f;
+            if (m_waveCooldownTimer <= 0) {
+                int npcsToSpawn = m_currentWave * 2;
+                for (int i = 0; i < npcsToSpawn; ++i) {
+                    if (m_activeNpcCount >= MAX_NPCS) break;
+                    int spawnIndex = rand() % m_spawnPointCount;
+                    NPC::NPCType type = static_cast<NPC::NPCType>(rand() % 3);
+                    SpawnNPC(m_npcSpawnPoints[spawnIndex].x, m_npcSpawnPoints[spawnIndex].y, type);
+                }
+                //if(m_currentWave < 3) m_currentWave++; // Buggy line removed
+                m_waveInProgress = true;
+
+            }
             else {
                 m_waveCooldownTimer -= deltaTime;
-                if (m_waveCooldownTimer <= 0) {
-                    int npcsToSpawn = m_currentWave * 2;
-                    for (int i = 0; i < npcsToSpawn; ++i) {
-                        if (m_activeNpcCount >= MAX_NPCS) break;
-                        int spawnIndex = rand() % m_spawnPointCount;
-                        NPC::NPCType type = static_cast<NPC::NPCType>(rand() % 3);
-                        SpawnNPC(m_npcSpawnPoints[spawnIndex].x, m_npcSpawnPoints[spawnIndex].y, type);
-                    }
-                    m_currentWave++;
-                    m_waveInProgress = true;
-                }
+            }
+        }
+        else if (m_activeNpcCount == 0 && m_waveInProgress) {
+            m_waveInProgress = false;
+            if (m_currentWave < 3) {
+                m_currentWave++; // Correctly increment wave after it's cleared
+                m_waveCooldownTimer = 5.0f;
+            }
+            else {
+                m_currentWave = 4; // Mark that all waves are done
             }
         }
         break;
@@ -595,5 +707,83 @@ void Game::SpawnProjectile(float startX, float startY, float angle, Projectile::
     if (m_activeProjectileCount >= MAX_PROJECTILES) return;
     m_projectilePool[m_activeProjectileCount].Activate(startX, startY, angle, type, owner);
     m_activeProjectileCount++;
+}
+
+// --- 新增的存档/读档/重置函数 ---
+
+void Game::SaveGame() {
+    if (m_currentLevel != 1) { // 仅为 Level 1 保存
+        std::cout << "Save is only available for Level 1." << std::endl;
+        return;
+    }
+
+    std::ofstream saveFile(SAVE_FILE_NAME, std::ios::binary);
+    if (!saveFile.is_open()) {
+        std::cerr << "Error: Could not create save file." << std::endl;
+        return;
+    }
+
+    SaveData data;
+    data.score = m_playerScore;
+    data.wave = m_currentWave;
+
+    saveFile.write(reinterpret_cast<const char*>(&data), sizeof(SaveData));
+    saveFile.close();
+    std::cout << "Game saved. Score: " << data.score << ", Wave: " << data.wave << std::endl;
+}
+
+void Game::LoadGame() {
+    if (m_currentLevel != 1) { // 仅为 Level 1 加载
+        std::cout << "Load is only available for Level 1." << std::endl;
+        return;
+    }
+
+    std::ifstream saveFile(SAVE_FILE_NAME, std::ios::binary);
+    if (!saveFile.is_open()) {
+        std::cerr << "Error: No save file found." << std::endl;
+        return;
+    }
+
+    SaveData data;
+    saveFile.read(reinterpret_cast<char*>(&data), sizeof(SaveData));
+    saveFile.close();
+
+    if (saveFile.gcount() != sizeof(SaveData)) {
+        std::cerr << "Error: Save file is corrupted." << std::endl;
+        return;
+    }
+
+    // 重置关卡状态
+    ResetLevelState();
+
+    // 应用加载的数据
+    m_playerScore = data.score;
+    m_currentWave = data.wave;
+
+    // 触发UI提示
+    m_showLoadMessage = true;
+    m_loadMessageTimer = 3.0f; // 显示3秒
+
+    std::cout << "Game loaded. Score: " << m_playerScore << ", Wave: " << m_currentWave << std::endl;
+}
+
+void Game::ResetLevelState() {
+    // 移除所有NPC
+    for (int i = 0; i < m_activeNpcCount; ++i) {
+        delete m_npcPool[i];
+        m_npcPool[i] = nullptr;
+    }
+    m_activeNpcCount = 0;
+
+    // 移除所有子弹
+    m_activeProjectileCount = 0;
+
+    // 重置玩家状态
+    m_player.SetPosition(1378.0f, 2106.0f); // 重置到初始位置
+    m_player.RestoreFullHealth(); // *** 修改: 使用公有函数恢复生命值 ***
+
+    // 重置波次逻辑，以便下一帧的UpdateSpawning可以生成新一波
+    m_waveInProgress = false;
+    m_waveCooldownTimer = 0.0f;
 }
 

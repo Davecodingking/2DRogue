@@ -51,20 +51,20 @@ NPC::NPC(NPCType type)
     // Set stats based on type
     switch (m_type) {
     case MELEE:
-		InitializeStats(50, 150.0f, 0.15f);//health 50, speed 150 render scale 0.15
+		InitializeStats(50, 200.0f, 0.15f);//health 50, speed 200 render scale 0.15
         break;
     case SHOOTER:
-        InitializeStats(40, 80.0f, 0.3f);
+        InitializeStats(80, 80.0f, 0.3f);
         m_preferredDistance = 500.0f;
         m_fireRate = 1.0f;
         break;
     case SNIPER:
-        InitializeStats(60, 60.0f, 4.0f);
+        InitializeStats(100, 60.0f, 4.0f);
         m_preferredDistance = 800.0f;
         m_fireRate = 1.5f;
         break;
     case BOSS_AIRCRAFT:
-        InitializeStats(2000, 250.0f, 5.0f);
+        InitializeStats(2000, 250.0f, 6.0f);
         m_preferredDistance = 500.0f;
         m_fireRate = 0.3f;
         break;
