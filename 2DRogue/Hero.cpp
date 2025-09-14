@@ -12,7 +12,6 @@
 #define TILE_SIZE 32
 #endif
 
-// ... Hero构造函数, Load, Update等函数保持不变 ...
 
 Hero::Hero() {
     movementSpeed = 250.0f;
@@ -152,7 +151,7 @@ void Hero::CheckMapCollision(Level& level, float newX, float newY) {
     }
 }
 
-// ★★★ 错误修复: 添加缺失函数的具体实现 ★★★
+
 void Hero::SetPosition(float newX, float newY) {
     x = newX;
     y = newY;
@@ -163,10 +162,9 @@ void Hero::TakeDamage(int damage) {
     if (currentHealth <= 0) {
         currentHealth = 0;
         isAlive = false;
-        // 这里可以添加死亡逻辑, 例如播放死亡动画
+		// Add death handling logic here later
     }
 }
-// ★★★ 修复结束 ★★★
 
 void Hero::SetSlowed(bool slowed) { m_isSlowed = slowed; }
 

@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <cmath> 
 
-// --- 构造函数与析构函数 ---
 Level::Level() {
     mapWidth = 0;
     mapHeight = 0;
@@ -39,7 +38,7 @@ void Level::cleanup() {
     objectCount = 0;
 }
 
-// --- Getter 函数 ---
+
 int Level::getWidth() const { return mapWidth; }
 int Level::getHeight() const { return mapHeight; }
 int Level::getObjectCount() const { return objectCount; }
@@ -47,7 +46,6 @@ const GameObject* Level::getGameObjects() const { return gameObjects; }
 float Level::getZoom() const { return zoom; }
 bool Level::isInfiniteMode() const { return isInfinite; }
 
-// --- Setter 函数 ---
 void Level::setCameraPosition(int x, int y) {
     cameraX = x;
     cameraY = y;
@@ -63,7 +61,7 @@ void Level::setInfinite(bool infinite) {
     isInfinite = infinite;
 }
 
-// --- 核心逻辑函数 ---
+//core function to check if a tile is an obstacle
 bool Level::isObstacleAt(int tx, int ty) const {
     if (isInfinite) {
         if (!obstaclesData || mapWidth <= 0 || mapHeight <= 0) return false;
@@ -172,7 +170,6 @@ void Level::render(GamesEngineeringBase::Window& canvas) {
 }
 
 
-// --- 文件解析函数 (已恢复所有调试日志) ---
 bool Level::loadFromFile(const std::string& filename) {
     cleanup();
     std::ifstream file(filename);

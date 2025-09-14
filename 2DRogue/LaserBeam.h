@@ -1,7 +1,7 @@
 #pragma once
 #include "GamesEngineeringBase.h"
 
-// 前向声明
+// Forward declarations
 class NPC;
 class Hero;
 
@@ -35,7 +35,7 @@ private:
     float m_activateDelay;
     bool m_hasDamaged;
 
-    // --- 新增: 初始化标志位 ---
+    // Initialization flag
     bool m_isInitialized;
 };
 

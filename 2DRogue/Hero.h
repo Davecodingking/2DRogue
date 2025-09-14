@@ -16,7 +16,7 @@ public:
     void Update(Level& level, float deltaTime);
     void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom);
 
-    // ★★★ 错误修复: 将缺失的函数声明添加回来 ★★★
+    // Position and damage functions
     void SetPosition(float newX, float newY);
     void TakeDamage(int damage);
 

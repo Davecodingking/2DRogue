@@ -47,7 +47,7 @@ void Projectile::Activate(float startX, float startY, float angle, Type type, Ow
     m_owner = owner;
     m_type = type;
     m_animationFrame = 0.0f;
-    m_lifeTimer = 3.0f; // --- 修改: 设定所有子弹的生命周期为3秒 ---
+	m_lifeTimer = 3.0f; // set projectile lifetime to 3 seconds
 
     switch (m_type) {
     case MACHINE_GUN:
@@ -82,15 +82,14 @@ void Projectile::Update(float deltaTime) {
         m_x += m_velX * deltaTime;
         m_y += m_velY * deltaTime;
 
-        // --- 修改: 使用计时器作为唯一的消失逻辑 ---
         m_lifeTimer -= deltaTime;
         if (m_lifeTimer <= 0) {
             Deactivate();
-            return; // 已经消失，无需再执行下面的代码
+            return; 
         }
 
-        /* --- 移除: 不再需要基于固定区域的回收逻辑 ---
-        // 保留原有的边界检测作为备用方案
+        /* 
+		// keep old boundary check for reference
         if (m_x < -1000 || m_x > 5000 || m_y < -1000 || m_y > 5000) {
             Deactivate();
         }

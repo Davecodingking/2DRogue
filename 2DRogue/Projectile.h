@@ -46,7 +46,7 @@ private:
     float m_animationFrame;
     float m_animationSpeed;
 
-    // --- 新增: 子弹生命周期计时器 ---
+    // Lifetime for projectile
     float m_lifeTimer;
 
     static GamesEngineeringBase::Image s_bulletImage;

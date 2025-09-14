@@ -24,7 +24,7 @@ public:
     float getHeight() const { return height; }
     bool getIsAlive() const { return isAlive; }
 
-    // --- 新增: 獲取當前和最大生命值 ---
+    // Get current and max health
     int getHealth() const { return currentHealth; }
     int getMaxHealth() const { return maxHealth; }
 

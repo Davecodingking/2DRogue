@@ -21,7 +21,7 @@ public:
     void Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) override;
     void TakeDamage(int damage) override;
 
-    // --- FUNCTION MOVED TO PUBLIC ---
+    // Move towards a target position
     void MoveTowards(Level& level, float targetX, float targetY, float deltaTime);
 
     State getCurrentState() const { return m_currentState; }
@@ -30,7 +30,7 @@ public:
     bool canFire();
     void resetFireCooldown();
 
-    // --- Static Asset Management ---
+    // Static asset management
     static bool LoadSharedAssets();
     static void FreeSharedAssets();
 

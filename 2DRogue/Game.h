@@ -20,20 +20,16 @@ public:
     void Shutdown();
 
 private:
-    // --- 游戏状态管理 ---
+    // Game state management
     enum class GameState { MAIN_MENU, PLAYING, PAUSED };
     GameState m_gameState;
 
-    // ======================================================================
-    // ==                     新增代码: 游戏子状态管理                   ==
-    // ======================================================================
-    // 用于处理游戏中的特殊过渡阶段，如死亡和胜利
+    // Sub-state management for game transitions (death, victory)
     enum class PlayingState { NORMAL, PLAYER_DYING, VICTORY };
     PlayingState m_playingState;
-    float m_endGameTimer; // 用于控制结束画面的计时器
-    // ======================================================================
+    float m_endGameTimer; // Timer for end screen
 
-    // --- 状态处理函数 ---
+    // State handler functions
     void ProcessInput();
     void Update(float deltaTime);
     void Render();
@@ -50,7 +46,7 @@ private:
     void UpdatePaused(float deltaTime);
     void RenderPaused();
 
-    // --- 游戏逻辑与辅助函数 ---
+    // Game logic and helper functions
     void UpdateNPCs(float deltaTime);
     void UpdateProjectiles(float deltaTime);
     void UpdateSpawning(float deltaTime);
@@ -63,27 +59,24 @@ private:
     void RenderUI();
     void UpdateCamera();
 
-    // ======================================================================
-    // ==                    新增代码: 新增辅助函数声明                    ==
-    // ======================================================================
+    // Additional helper function declarations
     void DrawFullscreenOverlay(int r, int g, int b, float alpha);
     void ReturnToMainMenu();
-    void ResetSoundManager(); // 新增: 用于重置声音管理器
-    // ======================================================================
+    void ResetSoundManager(); // Used to reset the sound manager
 
-    // --- 存档/读档/关卡管理 ---
+    // Save/load/level management
     void SaveGame();
     void LoadGame();
     void ResetLevelState();
     void StartNewGame();
     void LoadLevel(const std::string& levelFile);
 
-    // --- 游戏世界对象 ---
+    // Game world objects
     GamesEngineeringBase::Window m_window;
     Level m_level;
     Hero m_player;
 
-    // --- 对象池 ---
+    // Object pools
     static const int MAX_NPCS = 50;
     NPC* m_npcPool[MAX_NPCS];
     int m_activeNpcCount;
@@ -98,7 +91,7 @@ private:
     NPC* m_npcsHitThisFrame[MAX_HIT_NPCS];
     int m_npcsHitCount;
 
-    // --- 拾取物 ---
+    // Pickups
     struct Pickup {
         int x, y;
         bool isCollected = false;
@@ -107,7 +100,7 @@ private:
     Pickup m_laserPickups[MAX_PICKUPS];
     int m_pickupCount;
 
-    // --- 出生点 ---
+    // Spawn points
     struct SpawnPoint { int x; int y; };
     static const int MAX_SPAWN_POINTS = 10;
     SpawnPoint m_npcSpawnPoints[MAX_SPAWN_POINTS];
@@ -115,7 +108,7 @@ private:
     SpawnPoint m_bossSpawnPoints[MAX_SPAWN_POINTS];
     int m_bossSpawnPointCount;
 
-    // --- 计时器与状态变量 ---
+    // Timers and state variables
     float m_gameTimer;
     float m_playerDamageCooldown;
     int m_currentLevel;
@@ -130,7 +123,7 @@ private:
     float m_zoom;
     bool m_isRunning;
 
-    // --- UI 相关 ---
+    // UI related
     GamesEngineeringBase::Image m_healthSheet;
     GamesEngineeringBase::Image m_machineGunIcon;
     GamesEngineeringBase::Image m_cannonIcon;
@@ -159,12 +152,12 @@ private:
     bool m_showLoadMessage;
     float m_loadMessageTimer;
 
-    // --- 声音相关 ---
+    // Sound related
     GamesEngineeringBase::SoundManager* m_soundManager;
-    bool m_isMusicPlaying; // 新增: 音乐播放状态
+    bool m_isMusicPlaying; // Music playing state
     std::string m_machineGunSoundFile;
     std::string m_plasmaGunSoundFile;
     std::string m_laserSoundFile;
-    std::string m_backgroundMusicFile; // 新增: 背景音乐文件路径
+    std::string m_backgroundMusicFile; // Background music file path
 };
 

@@ -37,46 +37,44 @@ void LaserBeam::Activate(Hero* owner, float targetX, float targetY, float delay)
     m_targetY = targetY;
     m_activateDelay = delay;
     m_hasDamaged = false;
-    m_isInitialized = false; // --- 核心修改: 每次激活时重置初始化状态 ---
+    m_isInitialized = false; 
 }
 
 bool LaserBeam::Update(float deltaTime) {
     if (!m_isActive) return false;
 
-    // 首先处理激活延迟
     if (m_activateDelay > 0) {
         m_activateDelay -= deltaTime;
         return false;
     }
 
-    // --- 核心修改: 延迟结束后，如果尚未初始化，则执行初始化 ---
     if (!m_isInitialized) {
         if (m_owner) {
-            // 获取英雄当前最新位置作为发射点
+			// get hero's current firing position
             m_actualStartX = m_owner->GetFirePosX();
             m_actualStartY = m_owner->GetFirePosY();
 
-            // 根据最新位置计算角度和长度
+			// Calculate angle and length
             float dx = m_targetX - m_actualStartX;
             float dy = m_targetY - m_actualStartY;
             m_angle = atan2(dy, dx);
             m_length = sqrt(dx * dx + dy * dy) + 2500;
 
-            m_isInitialized = true; // 标记为已初始化
+            m_isInitialized = true; 
         }
         else {
-            m_isActive = false; // 如果发射源无效，则取消
+            m_isActive = false;
             return false;
         }
     }
 
-    // 处理生命周期
+	// handle life timer
     m_lifeTimer -= deltaTime;
     if (m_lifeTimer <= 0) {
         m_isActive = false;
     }
 
-    // 处理伤害信号 (只发送一次)
+	// Return true only on the first frame after activation
     if (!m_hasDamaged) {
         m_hasDamaged = true;
         return true;
@@ -86,7 +84,7 @@ bool LaserBeam::Update(float deltaTime) {
 }
 
 void LaserBeam::Render(GamesEngineeringBase::Window& canvas, int cameraX, int cameraY, float zoom) {
-    // 只有在初始化之后才渲染
+    
     if (!m_isActive || !m_isInitialized || s_laserImage.width == 0) return;
 
     float screenStartX = (m_actualStartX - cameraX) * zoom;
@@ -116,7 +114,7 @@ void LaserBeam::Render(GamesEngineeringBase::Window& canvas, int cameraX, int ca
 }
 
 bool LaserBeam::CheckCollision(NPC* npc) {
-    // 只有在初始化之后才进行碰撞检测
+	// Simple line-circle collision detection
     if (!m_isInitialized) return false;
 
     float npcX = npc->getX() + npc->getWidth() / 2.0f;

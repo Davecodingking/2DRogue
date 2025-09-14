@@ -20,7 +20,7 @@ struct SaveData {
     int wave;
 };
 
-// --- ∏®÷˙ªÊÕº∫Ø ˝ ---
+// --- Helper drawing functions ---
 void DrawCharacter(GamesEngineeringBase::Window& canvas, char c, int startX, int startY, int scale) {
     bool pixels[35] = { 0 };
     switch (c) {
@@ -123,13 +123,13 @@ Game::Game()
     m_playerScore(0), m_fps(0), m_frameCount(0), m_fpsTimer(0.0f),
     m_showLoadMessage(false), m_loadMessageTimer(0.0f),
     m_soundManager(nullptr),
-    m_isMusicPlaying(false), // ≥ı ºªØ“Ù¿÷≤•∑≈◊¥Ã¨
+    m_isMusicPlaying(false), // Music playing state
     m_showTutorial(true),
     m_showLevel1Tutorial(false),
     m_machineGunSoundFile("Resources/soundeffect/machinegun.wav"),
     m_plasmaGunSoundFile("Resources/soundeffect/plasmagun.wav"),
     m_laserSoundFile("Resources/soundeffect/lasergun.wav"),
-    m_backgroundMusicFile("Resources/music.wav") // ≥ı ºªØ±≥æ∞“Ù¿÷Œƒº˛¬∑æ∂
+    m_backgroundMusicFile("Resources/music.wav") // Background music file path
 {
     for (int i = 0; i < MAX_NPCS; ++i) m_npcPool[i] = nullptr;
     srand(static_cast<unsigned int>(time(0)));
@@ -166,7 +166,7 @@ bool Game::Initialize(const std::string& levelFile) {
     m_soundManager->load(m_machineGunSoundFile);
     m_soundManager->load(m_plasmaGunSoundFile);
     m_soundManager->load(m_laserSoundFile);
-    m_soundManager->loadMusic(m_backgroundMusicFile); // º”‘ÿ±≥æ∞“Ù¿÷
+    m_soundManager->loadMusic(m_backgroundMusicFile); // Load background music
 
     LoadLevel(levelFile);
 
@@ -207,7 +207,6 @@ bool Game::Initialize(const std::string& levelFile) {
     SetRect(&m_pauseQuitButtonRect, pauseMenuX, pauseMenuY + (int)(p_btn2_top_ratio * pauseMenuHeight), pauseMenuX + pauseMenuWidth, pauseMenuY + (int)(p_btn2_bottom_ratio * pauseMenuHeight));
 
     m_isRunning = true;
-    return true;
 }
 
 void Game::Run() {
@@ -387,7 +386,7 @@ void Game::ProcessInputPlaying(float deltaTime) {
 void Game::UpdatePlaying(float deltaTime) {
     switch (m_playingState) {
     case PlayingState::NORMAL: {
-        // ≤•∑≈±≥æ∞“Ù¿÷
+        // Play background music
         if (!m_isMusicPlaying) {
             m_soundManager->playMusic();
             m_isMusicPlaying = true;
@@ -483,7 +482,7 @@ void Game::RenderPlaying() {
         DrawFullscreenOverlay(255, 255, 255, alpha);
 
         const char* victoryText = "ALL CLEAR";
-        int textWidth = 0; for (int i = 0; victoryText[i] != '\0'; ++i) textWidth += (6 * 8);
+        int textWidth = 0; for (int i = 0; victoryText[i] != '\0'; ++i) textWidth += (6 * 5);
         DrawText(m_window, victoryText, m_window.getWidth() / 2 - textWidth / 2, m_window.getHeight() / 2 - 28, 8);
         break;
     }
@@ -504,7 +503,7 @@ void Game::ProcessInputPaused() {
             m_gameState = GameState::PLAYING;
         }
         else if (PtInRect(&m_pauseQuitButtonRect, mousePos)) {
-            ResetSoundManager(); // Õ£÷π“Ù¿÷
+            ResetSoundManager(); // Stop music
             m_gameState = GameState::MAIN_MENU;
             m_showTutorial = true;
             ResetLevelState();
@@ -558,7 +557,7 @@ void Game::UpdateNPCs(float deltaTime) {
             case NPC::SNIPER: m_playerScore += 200; break;
             case NPC::BOSS_AIRCRAFT:
                 m_playerScore += 1000;
-                if (m_currentLevel == 2) { //  §¿˚Ãıº˛
+                if (m_currentLevel == 2) { // Victory condition
                     m_playingState = PlayingState::VICTORY;
                     m_endGameTimer = 0.0f;
                 }
@@ -1103,7 +1102,7 @@ void Game::ReturnToMainMenu() {
         std::cout << "Save file deleted." << std::endl;
     }
 
-    ResetSoundManager(); // Õ£÷π“Ù¿÷
+    ResetSoundManager(); // Stop music
     m_gameState = GameState::MAIN_MENU;
     m_showTutorial = true;
     ResetLevelState();

@@ -2,7 +2,7 @@
 #include <string>
 #include "GamesEngineeringBase.h"
 
-// GameObject 结构体，用于存储 Tiled 中的对象信息
+// GameObject structure for storing Tiled object info
 struct GameObject {
     std::string type;
     int x;
@@ -14,32 +14,32 @@ public:
     Level();
     ~Level();
 
-    // 从 Tiled 导出的 .json 文件加载关卡数据
+    // Load level from Tiled .json file
     bool loadFromFile(const std::string& filename);
-    // 渲染关卡
+    // Render the level
     void render(GamesEngineeringBase::Window& canvas);
 
-    // 获取地图宽度（单位：图块）
+    // Get map width (in tiles)
     int getWidth() const;
-    // 获取地图高度（单位：图块）
+    // Get map height (in tiles)
     int getHeight() const;
-    // 获取游戏对象数量
+    // Get number of game objects
     int getObjectCount() const;
-    // 获取游戏对象数组的指针
+    // Get pointer to game objects
     const GameObject* getGameObjects() const;
-    // 检查指定坐标的图块是否为障碍物
+    // Check if a tile is an obstacle
     bool isObstacleAt(int tx, int ty) const;
 
-    // 获取当前的缩放级别
+    // Get current zoom
     float getZoom() const;
-    // 获取是否为无限模式
+    // Check if infinite mode is enabled
     bool isInfiniteMode() const;
 
-    // 设置摄像机的世界坐标
+    // Set camera position
     void setCameraPosition(int x, int y);
-    // 设置渲染的缩放级别
+    // Set zoom level for rendering
     void setZoom(float zoomLevel);
-    // 设置是否为无限模式
+    // Set infinite mode
     void setInfinite(bool infinite);
 
 
@@ -49,14 +49,14 @@ private:
     int cameraX;
     int cameraY;
     float zoom;
-    bool isInfinite; // 新增：用于标记是否为无限地图
+    bool isInfinite; // Indicates if the map is infinite
 
-    // 修改这部分：使用一个结构体来存储图块的完整信息
+    // Tile structure for storing tile info
     struct Tile {
-        int id = 0; // 纯净的图块ID
-        bool flip_h = false; // 是否水平翻转
-        bool flip_v = false; // 是否垂直翻转
-        bool flip_d = false; // 是否对角线翻转 (用于旋转)
+        int id = 0; // Tile ID
+        bool flip_h = false; // Horizontal flip
+        bool flip_v = false; // Vertical flip
+        bool flip_d = false; // Diagonal flip (rotation)
     };
 
     Tile* backgroundData;
@@ -71,7 +71,7 @@ private:
 
     void cleanup();
 
-    // 解析JSON的辅助函数
+    // JSON parsing helpers
     bool findIntValueInSubstring(const std::string& content, const std::string& key, int& outValue);
     bool findStringValueInSubstring(const std::string& content, const std::string& key, std::string& outValue);
 };
