@@ -68,6 +68,7 @@ private:
     // ======================================================================
     void DrawFullscreenOverlay(int r, int g, int b, float alpha);
     void ReturnToMainMenu();
+    void ResetSoundManager(); // 新增: 用于重置声音管理器
     // ======================================================================
 
     // --- 存档/读档/关卡管理 ---
@@ -140,7 +141,9 @@ private:
     GamesEngineeringBase::Image m_settingImage;
     GamesEngineeringBase::Image m_savequitImage;
     GamesEngineeringBase::Image m_tutorialImage;
+    GamesEngineeringBase::Image m_tutorial2Image;
     bool m_showTutorial;
+    bool m_showLevel1Tutorial;
 
     RECT m_startButtonRect;
     RECT m_loadButtonRect;
@@ -156,10 +159,12 @@ private:
     bool m_showLoadMessage;
     float m_loadMessageTimer;
 
+    // --- 声音相关 ---
     GamesEngineeringBase::SoundManager* m_soundManager;
-
+    bool m_isMusicPlaying; // 新增: 音乐播放状态
     std::string m_machineGunSoundFile;
     std::string m_plasmaGunSoundFile;
     std::string m_laserSoundFile;
+    std::string m_backgroundMusicFile; // 新增: 背景音乐文件路径
 };
 

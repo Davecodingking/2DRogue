@@ -123,10 +123,13 @@ Game::Game()
     m_playerScore(0), m_fps(0), m_frameCount(0), m_fpsTimer(0.0f),
     m_showLoadMessage(false), m_loadMessageTimer(0.0f),
     m_soundManager(nullptr),
+    m_isMusicPlaying(false), // 初始化音乐播放状态
     m_showTutorial(true),
+    m_showLevel1Tutorial(false),
     m_machineGunSoundFile("Resources/soundeffect/machinegun.wav"),
     m_plasmaGunSoundFile("Resources/soundeffect/plasmagun.wav"),
-    m_laserSoundFile("Resources/soundeffect/lasergun.wav")
+    m_laserSoundFile("Resources/soundeffect/lasergun.wav"),
+    m_backgroundMusicFile("Resources/music.wav") // 初始化背景音乐文件路径
 {
     for (int i = 0; i < MAX_NPCS; ++i) m_npcPool[i] = nullptr;
     srand(static_cast<unsigned int>(time(0)));
@@ -158,10 +161,12 @@ bool Game::Initialize(const std::string& levelFile) {
     if (!m_savequitImage.load("Resources/savequit.png")) { return false; }
     if (!m_menuBackgroundImage.load("Resources/menubackground.png")) { return false; }
     if (!m_tutorialImage.load("Resources/tutorial.png")) { return false; }
+    if (!m_tutorial2Image.load("Resources/tutorial2.png")) { return false; }
 
     m_soundManager->load(m_machineGunSoundFile);
     m_soundManager->load(m_plasmaGunSoundFile);
     m_soundManager->load(m_laserSoundFile);
+    m_soundManager->loadMusic(m_backgroundMusicFile); // 加载背景音乐
 
     LoadLevel(levelFile);
 
@@ -316,12 +321,21 @@ void Game::RenderMainMenu() {
 }
 
 void Game::ProcessInputPlaying(float deltaTime) {
-    if (m_playingState != PlayingState::NORMAL) {
+    static bool was_mouse_pressed = false;
+    bool is_mouse_pressed = m_window.mouseButtonPressed(GamesEngineeringBase::MouseButton::MouseLeft);
+
+    if (m_showLevel1Tutorial) {
+        if (is_mouse_pressed && !was_mouse_pressed) {
+            m_showLevel1Tutorial = false;
+        }
+        was_mouse_pressed = is_mouse_pressed;
         return;
     }
 
-    static bool was_mouse_pressed = false;
-    bool is_mouse_pressed = m_window.mouseButtonPressed(GamesEngineeringBase::MouseButton::MouseLeft);
+    if (m_playingState != PlayingState::NORMAL) {
+        was_mouse_pressed = is_mouse_pressed;
+        return;
+    }
 
     if (is_mouse_pressed) {
         if (m_player.CanFire() && m_player.GetCurrentWeapon() == Hero::WeaponType::MACHINE_GUN) {
@@ -373,6 +387,12 @@ void Game::ProcessInputPlaying(float deltaTime) {
 void Game::UpdatePlaying(float deltaTime) {
     switch (m_playingState) {
     case PlayingState::NORMAL: {
+        // 播放背景音乐
+        if (!m_isMusicPlaying) {
+            m_soundManager->playMusic();
+            m_isMusicPlaying = true;
+        }
+
         if (m_player.getHealth() <= 0) {
             m_playingState = PlayingState::PLAYER_DYING;
             m_endGameTimer = 0.0f;
@@ -427,6 +447,23 @@ void Game::RenderPlaying() {
         RenderUI();
     }
 
+    if (m_showLevel1Tutorial) {
+        float winWidth = (float)m_window.getWidth();
+        float winHeight = (float)m_window.getHeight();
+        float imgWidth = (float)m_tutorial2Image.width;
+        float imgHeight = (float)m_tutorial2Image.height;
+        if (imgWidth > 0 && imgHeight > 0) {
+            float scaleX = winWidth / imgWidth;
+            float scaleY = winHeight / imgHeight;
+            float scale = (scaleX < scaleY) ? scaleX : scaleY;
+            int newWidth = static_cast<int>(imgWidth * scale);
+            int newHeight = static_cast<int>(imgHeight * scale);
+            int startX = (int)(winWidth - newWidth) / 2;
+            int startY = (int)(winHeight - newHeight) / 2;
+            DrawImageStretched(m_window, m_tutorial2Image, startX, startY, newWidth, newHeight);
+        }
+    }
+
     switch (m_playingState) {
     case PlayingState::PLAYER_DYING: {
         const char* text = "U DIED";
@@ -467,14 +504,10 @@ void Game::ProcessInputPaused() {
             m_gameState = GameState::PLAYING;
         }
         else if (PtInRect(&m_pauseQuitButtonRect, mousePos)) {
-            // ======================================================================
-            // ==                     代码修复: 修正退出逻辑                       ==
-            // ======================================================================
-            // 直接返回主菜单，不再调用会删除存档的 ReturnToMainMenu()
+            ResetSoundManager(); // 停止音乐
             m_gameState = GameState::MAIN_MENU;
             m_showTutorial = true;
             ResetLevelState();
-            // ======================================================================
         }
     }
     was_mouse_pressed = is_mouse_pressed;
@@ -1005,6 +1038,7 @@ void Game::ResetLevelState() {
 
 void Game::LoadLevel(const std::string& levelFile) {
     ResetLevelState();
+    m_showLevel1Tutorial = false;
 
     if (!m_level.loadFromFile(levelFile)) {
         std::cerr << "FATAL: Could not load level " << levelFile << std::endl;
@@ -1014,6 +1048,7 @@ void Game::LoadLevel(const std::string& levelFile) {
 
     if (levelFile.find("level1") != std::string::npos) {
         m_currentLevel = 1;
+        m_showLevel1Tutorial = true;
     }
     else if (levelFile.find("level2") != std::string::npos) {
         m_currentLevel = 2;
@@ -1068,8 +1103,19 @@ void Game::ReturnToMainMenu() {
         std::cout << "Save file deleted." << std::endl;
     }
 
+    ResetSoundManager(); // 停止音乐
     m_gameState = GameState::MAIN_MENU;
     m_showTutorial = true;
     ResetLevelState();
+}
+
+void Game::ResetSoundManager() {
+    delete m_soundManager;
+    m_soundManager = new GamesEngineeringBase::SoundManager();
+    m_soundManager->load(m_machineGunSoundFile);
+    m_soundManager->load(m_plasmaGunSoundFile);
+    m_soundManager->load(m_laserSoundFile);
+    m_soundManager->loadMusic(m_backgroundMusicFile);
+    m_isMusicPlaying = false;
 }
 
