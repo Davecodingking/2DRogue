@@ -30,11 +30,11 @@ Here are four locations for you to showcase different aspects of your game.
 
 | Player in Action                                                                              | Enemy Variety                                                                                   |
 | :-------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------- |
-| ![Player Combat Screenshot](https://placehold.co/400x225/1e1e1e/c8c8c8?text=放置玩家战斗截图)      | ![Enemy Types Screenshot](https://placehold.co/400x225/1e1e1e/c8c8c8?text=放置多种敌人截图)       |
-| **(Recommended: A screenshot of the player using an AOE or linear attack)** | **(Recommended: A scene showing at least two different types of enemies)** |
+| ![Player Combat Screenshot](https://github.com/Davecodingking/2DRogue/blob/master/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-09-14%20123502.png)      | ![Enemy Types Screenshot](https://github.com/Davecodingking/2DRogue/blob/master/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-09-14%20123435.png)       |
+| **( A screenshot of the player using an AOE or linear attack)** | **( A scene showing at least two different types of enemies)** |
 | **Level & Environment** | **UI & Game State** |
-| ![Level Design Screenshot](https://placehold.co/400x225/1e1e1e/c8c8c8?text=放置关卡环境截图)      | ![UI Screenshot](https://placehold.co/400x225/1e1e1e/c8c8c8?text=放置游戏UI截图)             |
-| **(Recommended: A shot that shows the tile-based world and level structure)** | **(Recommended: A screenshot displaying the score, player health, or other UI elements)** |
+| ![Level Design Screenshot](https://github.com/Davecodingking/2DRogue/blob/master/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-09-04%20172622.png)      | ![UI Screenshot](https://github.com/Davecodingking/2DRogue/blob/master/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-09-14%20120910.png)             |
+| **( A shot that shows the tile-based world and level structure)** | **( A screenshot displaying the score, player health, or other UI elements)** |
 
 ---
 
